@@ -1,7 +1,17 @@
 #!/bin/bash
 # Script simple para despliegue en Render
 
-echo "===== Iniciando despliegue en Render ====="
+echo "===== Iniciando despli# Inyectar interceptor de localhost
+echo "===== Insertando interceptor de localhost ====="
+node insert-localhost-interceptor.js || echo "⚠️ Error al insertar interceptor de localhost. Continuando..."
+
+# Inicializar IndexedDB para caché
+echo "===== Inicializando IndexedDB para caché ====="
+node initialize-indexeddb.js || echo "⚠️ Error al inicializar IndexedDB. Continuando..."
+
+# Modificar index.html para agregar código de redirección
+echo "===== Modificando index.html para menús compartidos ====="
+node modify-index-html.js || echo "⚠️ Error al modificar index.html. Continuando..." Render ====="
 
 # Asegurar que los archivos de script tengan permisos adecuados
 chmod +x build-without-eslint.sh
@@ -16,7 +26,7 @@ npm install express dotenv cors webpack-cli
 
 # Asegurarse de que los archivos del servidor estén disponibles
 echo "===== Copiando archivos del servidor ====="
-cp -f server.js api-mocks.js server-fixes.js api-interceptor.js inject-interceptor.js modify-index-html.js patch-compiled-js.js patch-sync-service.js create-menu-page.js insert-localhost-interceptor.js generate-menu-pages.js static-menu-page.js ./dist/ 2>/dev/null || :
+cp -f server.js cache-server.js api-mocks.js server-fixes.js api-interceptor.js inject-interceptor.js modify-index-html.js patch-compiled-js.js patch-sync-service.js create-menu-page.js insert-localhost-interceptor.js generate-menu-pages.js static-menu-page.js fix-business-info-error.js fix-menu-cache.js initialize-indexeddb.js fix-duplicate-definitions.js menu-backup.html menu-not-found.html ./dist/ 2>/dev/null || :
 echo "✅ Archivos del servidor copiados"
 
 # Crear directorio dist si no existe
@@ -96,6 +106,18 @@ node patch-compiled-js.js || echo "⚠️ Error al parchear archivos JS. Continu
 # Parchear específicamente el servicio de sincronización
 echo "===== Aplicando parche para evitar localhost en producción ====="
 node patch-sync-service.js || echo "⚠️ Error al parchear syncService. Continuando..."
+
+# Parchear específicamente el problema de businessInfo
+echo "===== Aplicando parche crítico para error de businessInfo ====="
+node fix-business-info-error.js || echo "⚠️ Error al aplicar parche businessInfo. Continuando..."
+
+# Aplicar parche para problemas de caché
+echo "===== Aplicando parche para problemas de caché ====="
+node fix-menu-cache.js || echo "⚠️ Error al aplicar parche de caché. Continuando..."
+
+# Eliminar definiciones duplicadas en el código JS
+echo "===== Eliminando definiciones duplicadas ====="
+node fix-duplicate-definitions.js || echo "⚠️ Error al eliminar definiciones duplicadas. Continuando..."
 
 # Crear páginas HTML estáticas para el menú principal
 echo "===== Creando página HTML estática para menú principal ====="

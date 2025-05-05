@@ -151,10 +151,23 @@ app.get('/menu/:shareId', (req, res) => {
     
     // Intentar cargar la página estática específica
     const specialMenuPath = path.join(__dirname, 'dist', 'menu', shareId, 'index.html');
+    const backupPath = path.join(__dirname, 'dist', 'menu', shareId, 'backup.html');
+    const minimalPath = path.join(__dirname, 'dist', 'menu', shareId, 'minimal.html');
+    const fallbackPath = path.join(__dirname, 'menu-backup.html');
     
+    // Probar múltiples ubicaciones para el archivo
     if (fs.existsSync(specialMenuPath)) {
       console.log('✅ Enviando página estática específica');
       return res.sendFile(specialMenuPath);
+    } else if (fs.existsSync(backupPath)) {
+      console.log('✅ Enviando página de backup');
+      return res.sendFile(backupPath);
+    } else if (fs.existsSync(minimalPath)) {
+      console.log('✅ Enviando página minimal');
+      return res.sendFile(minimalPath);
+    } else if (fs.existsSync(fallbackPath)) {
+      console.log('✅ Enviando página fallback');
+      return res.sendFile(fallbackPath);
     }
     
     // Si no existe, intentar generarla
@@ -170,6 +183,54 @@ app.get('/menu/:shareId', (req, res) => {
     } catch (error) {
       console.error('❌ Error generando página estática:', error);
     }
+    
+    // Si todo falla, verificar si existe el archivo de "menú no encontrado"
+    const notFoundPath = path.join(__dirname, 'menu-not-found.html');
+    
+    if (fs.existsSync(notFoundPath)) {
+      console.log('⚠️ Enviando página de "menú no encontrado"');
+      return res.sendFile(notFoundPath);
+    }
+    
+    // Si ni siquiera existe el archivo de "menú no encontrado", generar HTML directamente
+    console.log('⚠️ Generando HTML directamente como último recurso');
+    const menuData = menuMock.generateMenu(shareId);
+    
+    return res.send(`
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Menú - ${menuData.businessInfo.name}</title>
+      <style>body{font-family:Arial,sans-serif;line-height:1.6;max-width:800px;margin:0 auto;padding:15px}.header{background:#2c3e50;color:#fff;padding:20px;text-align:center;margin-bottom:20px;border-radius:5px}.item{margin-bottom:15px;border-bottom:1px solid #eee;padding-bottom:15px}.item-name{font-weight:700}.item-price{color:#e74c3c;font-weight:700}</style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>${menuData.businessInfo.name || 'Menú'}</h1>
+        <p>${menuData.businessInfo.description || ''}</p>
+      </div>
+      
+      ${menuData.categories.map(cat => `
+        <div class="category">
+          <h2>${cat.name}</h2>
+          ${cat.platos.map(item => `
+            <div class="item">
+              <div class="item-name">${item.name}</div>
+              <div class="item-description">${item.description || ''}</div>
+              <div class="item-price">$${item.price.toFixed(2)}</div>
+            </div>
+          `).join('')}
+        </div>
+      `).join('')}
+      
+      <div class="footer" style="margin-top:30px;text-align:center;color:#777">
+        <p>Dirección: ${menuData.businessInfo.address || 'No disponible'}</p>
+        <p>WebSAP © ${new Date().getFullYear()}</p>
+      </div>
+    </body>
+    </html>
+    `);
   }
   
   // Si llegamos aquí, usar el enfoque normal

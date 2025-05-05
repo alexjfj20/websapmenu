@@ -37,6 +37,22 @@ else
   echo "✅ Las páginas de menú existen"
 fi
 
+# Aplicar parche crítico para el error de businessInfo
+echo "===== Aplicando parche para error crítico de businessInfo ====="
+node fix-business-info-error.js || echo "⚠️ Error al aplicar parche de businessInfo, continuando..."
+
+# Aplicar parche para problemas de caché
+echo "===== Aplicando parche para problemas de caché ====="
+node fix-menu-cache.js || echo "⚠️ Error al aplicar parche de caché, continuando..."
+
+# Eliminar definiciones duplicadas en el código JS
+echo "===== Eliminando definiciones duplicadas ====="
+node fix-duplicate-definitions.js || echo "⚠️ Error al eliminar definiciones duplicadas, continuando..."
+
+# Inicializar IndexedDB para caché
+echo "===== Inicializando IndexedDB para caché ====="
+node initialize-indexeddb.js || echo "⚠️ Error al inicializar IndexedDB, continuando..."
+
 # Iniciar el servidor con reinicio automático en caso de error
 node server.js || {
   echo "❌ Error en el servidor. Reiniciando en 5 segundos..."

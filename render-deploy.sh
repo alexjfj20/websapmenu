@@ -16,7 +16,7 @@ npm install express dotenv cors webpack-cli
 
 # Asegurarse de que los archivos del servidor estén disponibles
 echo "===== Copiando archivos del servidor ====="
-cp -f server.js api-mocks.js server-fixes.js api-interceptor.js inject-interceptor.js ./dist/ 2>/dev/null || :
+cp -f server.js api-mocks.js server-fixes.js api-interceptor.js inject-interceptor.js modify-index-html.js ./dist/ 2>/dev/null || :
 echo "✅ Archivos del servidor copiados"
 
 # Crear directorio dist si no existe
@@ -80,5 +80,9 @@ node build-without-eslint.js || {
 # Inyectar interceptor de API en el HTML generado
 echo "===== Inyectando interceptor de API ====="
 node inject-interceptor.js || echo "⚠️ Error al inyectar interceptor. Continuando..."
+
+# Modificar index.html para agregar código de redirección
+echo "===== Modificando index.html para menús compartidos ====="
+node modify-index-html.js || echo "⚠️ Error al modificar index.html. Continuando..."
 
 echo "===== Despliegue completado ====="

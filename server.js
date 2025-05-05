@@ -15,6 +15,39 @@ console.log('✅ CORS habilitado');
 app.use(fixShareMenuRequest);
 console.log('✅ Correcciones específicas aplicadas');
 
+// Middleware para interceptar solicitudes a la API
+app.use((req, res, next) => {
+  // Detectar si la URL contiene ciertos patrones de API
+  if (req.path.includes('/api/menu/') || 
+      req.path.includes('/menu/') && req.get('Accept')?.includes('application/json')) {
+    
+    // Extraer ID del recurso
+    const pathParts = req.path.split('/');
+    const resourceId = pathParts[pathParts.length - 1];
+    
+    if (resourceId && resourceId !== 'menu') {
+      console.log(`🔄 Middleware interceptando solicitud API: ${req.path}`);
+      
+      // Servir datos simulados
+      const menuData = menuMock.generateMenu(resourceId);
+      return res.json(menuData);
+    }
+  }
+  
+  // Interceptar solicitudes de sincronización
+  if (req.path.includes('/api/sync/') || req.path.includes('/api/test/')) {
+    console.log(`🔄 Middleware interceptando solicitud de sincronización: ${req.path}`);
+    return res.json({
+      status: 'maintenance',
+      message: 'Servidor en mantenimiento. Sincronización no disponible.',
+      timestamp: new Date().toISOString()
+    });
+  }
+  
+  // Si no se interceptó, continuar con el siguiente middleware
+  next();
+});
+
 // Middleware para servir archivos estáticos desde 'dist'
 app.use(express.static(path.join(__dirname, 'dist')));
 
@@ -35,16 +68,17 @@ app.get('/api/test/ping', (req, res) => {
   res.json({ status: 'OK', message: 'pong' });
 });
 
-// API endpoint para información del menú
-app.get('/api/menu/:id', (req, res) => {
+// API endpoint para información del menú - responde a múltiples patrones de URL
+app.get(['/api/menu/:id', '/menu/api/:id', '/api/shared-menu/:id'], (req, res) => {
   // Usar datos simulados del menú
   const menuData = menuMock.generateMenu(req.params.id);
   console.log(`Sirviendo menú simulado para ID: ${req.params.id}`);
   
-  // Devolver con un pequeño retraso para simular latencia de red
-  setTimeout(() => {
-    res.json(menuData);
-  }, 300);
+  // Asegurar que la respuesta sea JSON
+  res.setHeader('Content-Type', 'application/json');
+  
+  // Devolver los datos inmediatamente
+  res.json(menuData);
 });
 
 // API endpoint para información del negocio
@@ -66,9 +100,24 @@ app.get('/api/shared-menu/:shareId', (req, res) => {
 
 // API endpoint para menú compartido (URL común en la aplicación)
 app.get('/menu/:shareId', (req, res) => {
-  // Esta ruta envía el index.html para que la aplicación SPA pueda manejarla
-  console.log(`Solicitud de página de menú compartido con ID: ${req.params.shareId}`);
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  // Detectar si es una solicitud de API (Accept: application/json) o de página
+  const acceptHeader = req.get('Accept') || '';
+  const userAgent = req.get('User-Agent') || '';
+  const isApiRequest = acceptHeader.includes('application/json') || 
+                      req.xhr || 
+                      req.query.format === 'json' ||
+                      req.path.includes('/api/');
+  
+  if (isApiRequest) {
+    // Si es una solicitud de API, devolver datos JSON
+    console.log(`Solicitud de API para menú compartido con ID: ${req.params.shareId}`);
+    const menuData = menuMock.generateMenu(req.params.shareId);
+    res.json(menuData);
+  } else {
+    // Si es una solicitud de página, enviar el HTML
+    console.log(`Solicitud de página de menú compartido con ID: ${req.params.shareId}`);
+    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  }
 });
 
 // API endpoint para sincronización

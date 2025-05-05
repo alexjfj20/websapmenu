@@ -46,14 +46,19 @@ echo "🔨 Intentando construir sin ESLint..."
 export VUE_CLI_SKIP_PLUGINS=eslint
 export NODE_ENV=production
 
-# Primera opción: vue-cli-service
-npx vue-cli-service build --skip-plugins eslint --mode production || {
-  echo "⚠️ Primera opción falló, intentando alternativa..."
-  # Segunda opción: webpack directamente
-  npx webpack --config ./node_modules/@vue/cli-service/webpack.config.js --mode production || {
-    echo "⚠️ Todos los intentos de construcción fallaron, usando página de mantenimiento."
+# Primera opción: vue-cli-service  npx vue-cli-service build --skip-plugins eslint --mode production || {
+    echo "⚠️ Primera opción falló, intentando alternativa..."
+    
+    # Pre-instalar webpack-cli para evitar la pregunta interactiva
+    echo "📦 Instalando webpack-cli automáticamente..."
+    npm install --no-save webpack-cli
+    
+    # Segunda opción: webpack directamente
+    echo "🛠️ Construyendo con webpack..."
+    npx webpack --config ./node_modules/@vue/cli-service/webpack.config.js --mode production || {
+      echo "⚠️ Todos los intentos de construcción fallaron, usando página de mantenimiento."
+    }
   }
-}
 
 # Restaurar el plugin si fue movido
 if [ -d "./temp-backup/cli-plugin-eslint" ]; then

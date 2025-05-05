@@ -7,12 +7,12 @@ echo "===== Iniciando despliegue en Render ====="
 chmod +x build-without-eslint.sh
 chmod +x start.sh
 
-# Limpiar caché e instalar solo dependencias esenciales
+# Limpiar caché e instalar dependencias esenciales
 echo "===== Limpiando caché ====="
 rm -rf node_modules package-lock.json
 
 echo "===== Instalando dependencias esenciales ====="
-npm install express dotenv cors
+npm install express dotenv cors webpack-cli
 
 # Crear directorio dist si no existe
 mkdir -p dist
@@ -59,7 +59,13 @@ node build-without-eslint.js || {
     echo "Método 3: Usando Vue CLI directamente..."
     export VUE_CLI_SKIP_PLUGINS=eslint
     npx vue-cli-service build --skip-plugins eslint --mode production || {
-      echo "Todos los métodos fallaron. Se usará la página de mantenimiento."
+      echo "Método 3 falló, intentando método 4..."
+      
+      # Método 4: Generar distribución mínima con Node.js
+      echo "Método 4: Generando distribución mínima con Node.js..."
+      node generate-minimal-dist.js || {
+        echo "Todos los métodos fallaron. Se usará la página de mantenimiento básica."
+      }
     }
   }
 }

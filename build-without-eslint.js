@@ -21,8 +21,29 @@ try {
   execSync('npm install', { stdio: 'inherit' });
   // Ejecutar vue-cli-service directamente sin cargar plugins
   console.log('🔨 Ejecutando build sin plugins de ESLint...');
-  
-  try {
+    try {
+    // Verificar si existe package.json en el directorio del proyecto
+    const packageJsonPath = path.resolve('./package.json');
+    if (fs.existsSync(packageJsonPath)) {
+      console.log('📝 Modificando configuración Vue para ignorar ESLint...');
+      
+      // Crear archivo vue.config.local.js con configuración para desactivar ESLint
+      const vueConfigContent = `
+module.exports = {
+  lintOnSave: false,
+  chainWebpack: config => {
+    config.plugins.delete('eslint');
+    if (config.module.rules.get('eslint')) {
+      config.module.rules.delete('eslint');
+    }
+  }
+};
+      `;
+      
+      fs.writeFileSync('./vue.config.local.js', vueConfigContent);
+      console.log('✅ Configuración Vue local creada');
+    }
+    
     // Intentar eliminar @vue/cli-plugin-eslint si existe
     console.log('🧹 Intentando eliminar plugin de ESLint temporalmente...');
     
@@ -65,10 +86,18 @@ try {
     }
   } catch (buildError) {
     console.error('❌ Error en el intento de construcción principal:', buildError.message);
-    
-    // Intentar un segundo enfoque - construir con webpack directamente
+      // Intentar un segundo enfoque - instalar webpack-cli y construir con webpack directamente
     try {
-      console.log('🔄 Intentando enfoque alternativo con webpack directamente...');
+      console.log('🔄 Intentando enfoque alternativo con webpack...');
+      
+      // Pre-instalar webpack-cli para evitar la pregunta interactiva
+      console.log('📦 Instalando webpack-cli automáticamente...');
+      execSync('npm install --no-save webpack-cli', {
+        stdio: 'inherit'
+      });
+      
+      // Ahora intentar construir con webpack
+      console.log('🛠️ Construyendo con webpack...');
       execSync('npx webpack --config node_modules/@vue/cli-service/webpack.config.js --mode production', {
         stdio: 'inherit',
         env: {

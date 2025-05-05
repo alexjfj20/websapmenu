@@ -35,10 +35,10 @@
 
 5. En la sección "Environment", añade las siguientes variables de entorno:
    - `NODE_ENV`: production
-   - `DATABASE_URL`: (Pega el Internal Database URL que obtuviste al crear la base de datos)
+   - `DATABASE_URL`: postgresql://websapmenu_user:0JNEr1PjKhtItdHHHdg4dVZSjuINM5Wk@dpg-d0c1foadbo4c73d7mt2g-a/websapmenu (Pega el Internal Database URL que obtuviste al crear la base de datos)
    - `JWT_SECRET`: (Una cadena segura para firmar los tokens JWT)
    - `JWT_EXPIRES_IN`: 24h
-   - `PORT`: 8080 (aunque Render asignará su propio puerto)
+   - `PORT`: 5432 (aunque Render asignará su propio puerto)
    - `SYNC_ENABLED`: true
    - `SYNC_INTERVAL`: 60000
    - Agrega otras variables de entorno necesarias para tu aplicación

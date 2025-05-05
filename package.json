@@ -1,14 +1,16 @@
 {
   "name": "websap",
   "version": "1.0.0",
-  "private": true,  "scripts": {
-    "serve": "vue-cli-service serve",    "build": "node ./node_modules/.bin/vue-cli-service build || npx vue-cli-service build",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build",
     "build:render": "node render-build.js",
     "lint": "vue-cli-service lint",
     "start": "node server.js",
-    "postinstall": "npm install --save @vue/cli-service && npm run build",
     "check-install": "node check-install.js"
-  },  "dependencies": {
+  },
+  "dependencies": {
     "core-js": "^3.8.3",
     "dotenv": "^16.0.0",
     "express": "^4.17.3",
@@ -38,20 +40,6 @@
   },
   "engines": {
     "node": ">=14.0.0"
-  },
-  "eslintConfig": {
-    "root": true,
-    "env": {
-      "node": true
-    },
-    "extends": [
-      "plugin:vue/vue3-essential",
-      "eslint:recommended"
-    ],
-    "parserOptions": {
-      "parser": "@babel/eslint-parser"
-    },
-    "rules": {}
   },
   "browserslist": [
     "> 1%",

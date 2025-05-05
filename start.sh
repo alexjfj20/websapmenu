@@ -53,6 +53,9 @@ node fix-duplicate-definitions.js || echo "⚠️ Error al eliminar definiciones
 echo "===== Inicializando IndexedDB para caché ====="
 node initialize-indexeddb.js || echo "⚠️ Error al inicializar IndexedDB, continuando..."
 
+# Asegurarse de que el directorio para el archivo de activación de regeneración existe
+mkdir -p dist
+
 # Iniciar el servidor con reinicio automático en caso de error
 node server.js || {
   echo "❌ Error en el servidor. Reiniciando en 5 segundos..."

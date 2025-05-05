@@ -121,6 +121,75 @@ app.get('/api/menu-publico', (req, res) => {
   res.json(menuData);
 });
 
+// Endpoints para operaciones CRUD que disparan regeneración de menú
+
+// Crear plato
+app.post('/api/platos', (req, res) => {
+  console.log('📝 Creando nuevo plato');
+  
+  // Aquí normalmente se guardaría en la base de datos
+  // Por ahora solo simulamos una respuesta exitosa
+  
+  // Programar regeneración de menú
+  if (menuRefresher) {
+    menuRefresher.triggerRefresh();
+  }
+  
+  res.status(201).json({ 
+    success: true, 
+    message: 'Plato creado exitosamente',
+    refreshScheduled: true
+  });
+});
+
+// Actualizar plato
+app.put('/api/platos/:id', (req, res) => {
+  console.log(`📝 Actualizando plato con ID: ${req.params.id}`);
+  
+  // Programar regeneración de menú
+  if (menuRefresher) {
+    menuRefresher.triggerRefresh();
+  }
+  
+  res.json({ 
+    success: true, 
+    message: 'Plato actualizado exitosamente',
+    refreshScheduled: true
+  });
+});
+
+// Eliminar plato
+app.delete('/api/platos/:id', (req, res) => {
+  console.log(`🗑️ Eliminando plato con ID: ${req.params.id}`);
+  
+  // Programar regeneración de menú
+  if (menuRefresher) {
+    menuRefresher.triggerRefresh();
+  }
+  
+  res.json({ 
+    success: true, 
+    message: 'Plato eliminado exitosamente',
+    refreshScheduled: true
+  });
+});
+
+// Endpoint para forzar regeneración de menú
+app.post('/api/admin/refresh-menu', (req, res) => {
+  console.log('🔄 Solicitud para regenerar menús');
+  
+  if (menuRefresher) {
+    const success = menuRefresher.triggerRefresh();
+    if (success) {
+      res.json({ success: true, message: 'Regeneración de menú programada' });
+    } else {
+      res.status(500).json({ success: false, message: 'Error al programar regeneración' });
+    }
+  } else {
+    res.status(501).json({ success: false, message: 'Servicio de regeneración no disponible' });
+  }
+});
+
 // API endpoint para menú compartido (URL común en la aplicación)
 app.get('/menu/:shareId', (req, res) => {
   const shareId = req.params.shareId;

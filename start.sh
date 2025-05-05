@@ -22,10 +22,16 @@ npm install express dotenv cors
 
 echo "===== Iniciando servidor ====="
 
-# Asegurarse de que se crea la página específica de menú en caso de que no se haya creado
-if [ ! -d "dist/menu/8idq9bgbdwr7srcw" ]; then
-  echo "Creando página específica para menú compartido..."
-  node create-menu-page.js || echo "⚠️ Error al crear página de menú, continuando..."
+# Asegurarse de que se crean las páginas específicas de menú
+echo "Verificando páginas de menú compartido..."
+if [ ! -d "dist/menu" ] || [ ! -d "dist/menu/8idq9bgbdwr7srcw" ]; then
+  echo "Creando páginas para menús compartidos..."
+  node generate-menu-pages.js || echo "⚠️ Error al crear páginas de menú, continuando..."
+elif [ ! -f "dist/menu/8idq9bgbdwr7srcw/index.html" ]; then
+  echo "Archivo index.html no encontrado para el menú principal, regenerando..."
+  node generate-menu-pages.js || echo "⚠️ Error al crear páginas de menú, continuando..."
+else
+  echo "✅ Las páginas de menú existen"
 fi
 
 # Iniciar el servidor con reinicio automático en caso de error

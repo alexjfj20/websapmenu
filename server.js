@@ -126,11 +126,42 @@ app.get('/menu/:shareId', (req, res) => {
       console.log('✅ Sirviendo página específica del menú');
       res.sendFile(specificMenuPath);
     } else {
-      // Si no existe, enviar datos JSON precargados en una página genérica
-      console.log('⚠️ No se encontró página específica, usando fallback');
+      // Si no existe, generar una página específica para este menú
+      console.log('⚠️ No se encontró página específica, generando una nueva');
+      
+      // Crear la estructura de directorios si no existe
+      const menuDir = path.join(__dirname, 'dist', 'menu');
+      if (!fs.existsSync(menuDir)) {
+        fs.mkdirSync(menuDir, { recursive: true });
+      }
+      
+      const shareIdDir = path.join(menuDir, shareId);
+      if (!fs.existsSync(shareIdDir)) {
+        fs.mkdirSync(shareIdDir, { recursive: true });
+      }
+      
+      // Generar los datos del menú
       const menuData = menuMock.generateMenu(shareId);
       
-      res.send(`
+      try {
+        // Intentar crear la página usando el script existente
+        console.log('🔄 Generando página HTML para el menú compartido...');
+        require('./create-menu-page');
+        
+        // Comprobar si se creó la página
+        if (fs.existsSync(specificMenuPath)) {
+          console.log('✅ Página generada correctamente, enviando al cliente');
+          return res.sendFile(specificMenuPath);
+        }
+      } catch (error) {
+        console.error('❌ Error al generar la página:', error);
+      }
+      
+      // Si no se pudo generar o cargar el script, crear una página simple
+      console.log('⚠️ Usando generación simplificada para la página de menú');
+      
+      // HTML básico pero completo para el menú compartido
+      const simpleHtml = `
       <!DOCTYPE html>
       <html lang="es">
       <head>
@@ -139,10 +170,13 @@ app.get('/menu/:shareId', (req, res) => {
         <title>Menú - ${menuData.businessInfo.name}</title>
         <style>
           body { font-family: Arial, sans-serif; margin: 0; padding: 20px; max-width: 800px; margin: 0 auto; }
-          .header { text-align: center; margin-bottom: 20px; }
-          .category { margin-bottom: 20px; border-bottom: 1px solid #eee; }
-          .item { margin-bottom: 10px; }
-          .maintenance { background: #f8d7da; color: #721c24; padding: 10px; text-align: center; }
+          .header { text-align: center; margin-bottom: 20px; padding: 20px; background-color: #2c3e50; color: white; }
+          .category { margin-bottom: 20px; background-color: white; padding: 15px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+          .item { margin-bottom: 15px; border-bottom: 1px dashed #eee; padding-bottom: 15px; }
+          .item:last-child { border-bottom: none; }
+          .item-name { font-weight: bold; }
+          .item-price { color: #e74c3c; font-weight: bold; }
+          .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #777; }
         </style>
       </head>
       <body>
@@ -150,28 +184,36 @@ app.get('/menu/:shareId', (req, res) => {
           <h1>${menuData.businessInfo.name || 'Menú'}</h1>
           <p>${menuData.businessInfo.description || ''}</p>
         </div>
-        <div class="maintenance">
-          <p>Esta página está en modo de mantenimiento</p>
-        </div>
+        
         <div id="menu-content">
           ${menuData.categories.map(cat => `
             <div class="category">
               <h2>${cat.name}</h2>
               ${cat.platos.map(item => `
                 <div class="item">
-                  <strong>${item.name}</strong> - $${item.price}
-                  <p>${item.description || ''}</p>
+                  <div class="item-name">${item.name}</div>
+                  <div class="item-description">${item.description || ''}</div>
+                  <div class="item-price">$${item.price.toFixed(2)}</div>
                 </div>
               `).join('')}
             </div>
           `).join('')}
         </div>
-        <script>
-          window.menuData = ${JSON.stringify(menuData)};
-        </script>
+        
+        <div class="footer">
+          <p>Dirección: ${menuData.businessInfo.address || 'No disponible'}</p>
+          <p>Teléfono: ${menuData.businessInfo.phone || 'No disponible'}</p>
+          <p>WebSAP © ${new Date().getFullYear()}</p>
+        </div>
       </body>
       </html>
-      `);
+      `;
+      
+      // Guardar la página generada para futuros accesos
+      fs.writeFileSync(path.join(shareIdDir, 'index.html'), simpleHtml);
+      
+      // Enviar al cliente
+      res.send(simpleHtml);
     }
   }
 });

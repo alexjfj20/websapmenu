@@ -1,0 +1,5 @@
+#!/bin/bash
+# Este archivo es detectado por Render y utilizado para la configuración del despliegue
+
+# Instalar Vue CLI globalmente para asegurarnos de que está disponible
+npm install -g @vue/cli @vue/cli-service vue-cli-service

@@ -1,15 +1,14 @@
 {
   "name": "websap",
   "version": "1.0.0",
-  "private": true,
-  "scripts": {
+  "private": true,  "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
     "start": "node server.js",
     "postinstall": "npm run build",
     "check-install": "node check-install.js",
-    "render-build": "bash render-build.sh || npm run build"
+    "render-build": "npx vue-cli-service build"
   },
   "dependencies": {
     "core-js": "^3.8.3",

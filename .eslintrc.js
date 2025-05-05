@@ -2,11 +2,21 @@
 module.exports = {
   root: true,
   env: {
-    node: true
+    node: true,
+    'vue/setup-compiler-macros': true
   },
-  extends: [],  // Removido 'plugin:vue/vue3-essential' para evitar el error de ESLint
+  extends: [
+    'eslint:recommended',
+    'plugin:vue/vue3-recommended' // Handles .vue file parsing
+  ],
+  parserOptions: {
+    parser: '@babel/eslint-parser', // For <script> section
+    requireConfigFile: false,
+    ecmaVersion: 2021 // Supports ES6+
+  },
   rules: {
-    'no-console': 'off',
-    'no-debugger': 'off'
+    'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
+    'no-debugger': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
+    // Add custom rules if needed
   }
 };

@@ -1,4 +1,6 @@
-module.exports = {
+const { defineConfig } = require('@vue/cli-service');
+
+module.exports = defineConfig({
   // Configuración de transpilación de dependencias
   transpileDependencies: true,
   
@@ -46,6 +48,10 @@ module.exports = {
       args[0].__VUE_PROD_HYDRATION_MISMATCH_DETAILS__ = JSON.stringify(false);
       return args;
     });
+    // Configuration previously (incorrectly) in package.json
+    config.plugins.delete('eslint');
+    config.module.rules.delete('eslint');
+    console.log('INFO: ESLint plugin/rule removed via chainWebpack.');
   },
   
   // Configuración de CSS
@@ -54,4 +60,4 @@ module.exports = {
     extract: process.env.NODE_ENV === 'production',
     sourceMap: process.env.NODE_ENV !== 'production'
   }
-};
+});

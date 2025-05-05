@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
+    // Build script - Consider cleaning cache in Render's build command instead
     "build": "vue-cli-service build",
     "build:render": "node render-build.js",
     "lint": "vue-cli-service lint",
@@ -40,41 +41,10 @@
   "engines": {
     "node": "18.x"
   },
-  "eslintConfig": {
-    "root": true,
-    "env": {
-      "node": true,
-      "vue/setup-compiler-macros": true
-    },
-    "extends": [
-      "eslint:recommended",
-      "plugin:vue/vue3-recommended"
-    ],
-    "parserOptions": {
-      "parser": "@babel/eslint-parser",
-      "requireConfigFile": false,
-      "ecmaVersion": 2021
-    },
-    "rules": {
-      /* ... */
-    }
-  },
-  "transpileDependencies": true,
-  "lintOnSave": false,
-  "chainWebpack": {
-    "config": {
-      "plugins": {
-        "delete": [
-          "eslint"
-        ]
-      },
-      "module": {
-        "rules": {
-          "delete": [
-            "eslint"
-          ]
-        }
-      }
-    }
-  }
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead",
+    "not ie 11"
+  ]
 }

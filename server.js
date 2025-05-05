@@ -2,133 +2,79 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
-
-// Cargar dependencias con manejo de errores
-let cors;
-try {
-  cors = require('cors');
-} catch (e) {
-  console.warn('⚠️ Módulo cors no encontrado. CORS no estará habilitado.');
-  cors = function() {
-    return (req, res, next) => next();
-  };
-}
+const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Verificar que el directorio dist existe
-const distPath = path.join(__dirname, 'dist');
-if (!fs.existsSync(distPath)) {
-  console.warn('⚠️ El directorio dist no existe. Creando una página temporal...');
-  try {
-    fs.mkdirSync(distPath, { recursive: true });
-    fs.writeFileSync(path.join(distPath, 'index.html'), `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>WebSAP</title>
-          <style>
-            body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
-            h1 { color: #4a4a4a; }
-          </style>
-        </head>
-        <body>
-          <h1>Aplicación en preparación</h1>
-          <p>La aplicación se está configurando. Por favor intenta más tarde.</p>
-        </body>
-      </html>
-    `);
-  } catch (err) {
-    console.error('Error al crear página temporal:', err);
-  }
-}
+// Habilitar CORS para todas las rutas
+app.use(cors());
+console.log('✅ CORS habilitado');
 
-// Habilitar CORS si está disponible
-try {
-  app.use(cors());
-  console.log('✅ CORS habilitado');
-} catch (e) {
-  console.warn('⚠️ No se pudo habilitar CORS:', e.message);
-}
+// Middleware para servir archivos estáticos desde 'dist'
+app.use(express.static(path.join(__dirname, 'dist')));
 
-// Middleware para servir archivos estáticos
-app.use(express.static('public'));
-app.use(express.static(distPath));
-
-// Middleware para parsear JSON y URL encoded
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// Registrar middleware para logging de requests
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
-  next();
+// API endpoints
+app.get('/api/status', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    message: 'Servidor en mantenimiento', 
+    time: new Date().toISOString() 
+  });
 });
 
-// API routes can be added here
-// Asumiendo que api.js está en ./routes/api.js o ./server/routes/api.js
-// Ajusta la ruta según tu estructura real
-try {
-  app.use('/api', require('./routes/api')); // Intenta con ./routes/api
-} catch (e) {
-  if (e.code === 'MODULE_NOT_FOUND') {
-    try {
-      app.use('/api', require('./server/routes/api')); // Intenta con ./server/routes/api
-    } catch (e2) {
-      console.warn("WARN: No se encontraron las rutas API en ./routes/api ni en ./server/routes/api. Las rutas API no estarán disponibles.");
-    }
-  } else {
-    console.error("Error al cargar rutas API:", e);
-  }
-}
-
-// Ruta de prueba para verificar que el servidor está activo
-app.get('/api/ping', (req, res) => {
-  res.setHeader('Content-Type', 'text/plain');
-  res.status(200).send('pong');
-});
-
-// For any request that doesn't match an API route, send the Vue app
+// Para cualquier otra ruta, enviar el archivo index.html
 app.get('*', (req, res) => {
-  const indexPath = path.join(distPath, 'index.html');
-  
-  // Verificar que el index.html existe
-  if (fs.existsSync(indexPath)) {
-    res.sendFile(indexPath);
-  } else {
-    res.status(200).send(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>WebSAP</title>
-          <style>
-            body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
-            h1 { color: #4a4a4a; }
-          </style>
-        </head>
-        <body>
-          <h1>WebSAP</h1>
-          <p>Aplicación en preparación. Por favor intenta más tarde.</p>
-        </body>
-      </html>
-    `);
-  }
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 // Iniciar el servidor
 app.listen(PORT, () => {
-  console.log(`✅ Servidor ejecutándose en puerto ${PORT}`);
-  console.log(`Entorno: ${process.env.NODE_ENV}`);
+  console.log(`Servidor iniciado en puerto ${PORT}`);
   console.log(`URL: http://localhost:${PORT}`);
-
-  // Listar todas las rutas registradas con sus métodos
-  app._router.stack.forEach((r) => {
-    if (r.route && r.route.path) {
-      const methods = Object.keys(r.route.methods)
-        .map((method) => method.toUpperCase())
-        .join(', ');
-      console.log(`📌 Ruta activa: ${methods} ${r.route.path}`);
+  
+  // Mostrar información del sistema
+  console.log(`Node.js: ${process.version}`);
+  console.log(`Entorno: ${process.env.NODE_ENV || 'development'}`);
+  
+  // Verificar si dist existe
+  const distPath = path.join(__dirname, 'dist');
+  const hasDistFolder = fs.existsSync(distPath);
+  const hasIndexHtml = hasDistFolder && fs.existsSync(path.join(distPath, 'index.html'));
+  
+  console.log(`Carpeta dist: ${hasDistFolder ? '✅ Existe' : '❌ No existe'}`);
+  console.log(`index.html: ${hasIndexHtml ? '✅ Existe' : '❌ No existe'}`);
+  
+  if (!hasDistFolder || !hasIndexHtml) {
+    console.log('⚠️ Creando página de mantenimiento predeterminada...');
+    
+    // Crear dist si no existe
+    if (!hasDistFolder) {
+      fs.mkdirSync(distPath, { recursive: true });
     }
-  });
+    
+    // Crear página de mantenimiento mínima
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>WebSAP - En mantenimiento</title>
+  <style>
+    body { font-family: Arial; text-align: center; padding: 50px; }
+    .container { max-width: 600px; margin: 0 auto; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>WebSAP</h1>
+    <p>En mantenimiento</p>
+  </div>
+</body>
+</html>
+    `;
+    
+    fs.writeFileSync(path.join(distPath, 'index.html'), htmlContent);
+    console.log('✅ Página de mantenimiento creada');
+  }
 });

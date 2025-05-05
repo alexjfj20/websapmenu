@@ -45,6 +45,13 @@ EOL
 # Intentar construir la aplicación con diferentes métodos
 echo "===== Intentando construir la aplicación ====="
 
+# Primero generar una página de mantenimiento garantizada
+echo "Generando página de mantenimiento de respaldo..."
+node generate-minimal-dist.js
+
+# Ahora intentar los métodos de construcción
+echo "Intentando métodos de construcción avanzados..."
+
 # Método 1: Script de node
 echo "Método 1: Usando script de Node..."
 node build-without-eslint.js || {
@@ -59,13 +66,8 @@ node build-without-eslint.js || {
     echo "Método 3: Usando Vue CLI directamente..."
     export VUE_CLI_SKIP_PLUGINS=eslint
     npx vue-cli-service build --skip-plugins eslint --mode production || {
-      echo "Método 3 falló, intentando método 4..."
-      
-      # Método 4: Generar distribución mínima con Node.js
-      echo "Método 4: Generando distribución mínima con Node.js..."
-      node generate-minimal-dist.js || {
-        echo "Todos los métodos fallaron. Se usará la página de mantenimiento básica."
-      }
+      echo "Todos los métodos de construcción fallaron."
+      echo "Se usará la página de mantenimiento generada anteriormente."
     }
   }
 }

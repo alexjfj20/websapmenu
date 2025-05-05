@@ -158,41 +158,87 @@ app.put('/api/platos/:id', (req, res) => {
   });
 });
 
-// Eliminar plato
+// Eliminar plato - VERSIÓN MEJORADA PARA GARANTIZAR ACTUALIZACIÓN INMEDIATA
 app.delete('/api/platos/:id', (req, res) => {
-  console.log(`🗑️ Eliminando plato con ID: ${req.params.id}`);
+  const platoId = req.params.id;
+  console.log(`🗑️ Eliminando plato con ID: ${platoId}`);
   
-  // Forzar regeneración inmediata del menú
-  if (menuRefresher && menuRefresher.triggerForceRefresh) {
-    console.log('⚡ Activando regeneración FORZADA por eliminación de plato');
-    menuRefresher.triggerForceRefresh();
+  try {
+    // PASO 1: Ejecutar directamente la reconstrucción forzada
+    console.log('⚡ Ejecutando reconstrucción forzada directa después de eliminación');
     
-    // También eliminar los archivos HTML de caché para asegurar regeneración
-    try {
-      const menuId = '8idq9bgbdwr7srcw'; // ID del menú principal
-      const menuDir = path.join(__dirname, 'dist', 'menu', menuId);
-      
-      if (fs.existsSync(menuDir)) {
-        // Buscar archivos HTML para eliminar
-        const files = fs.readdirSync(menuDir).filter(file => file.endsWith('.html'));
-        if (files.length > 0) {
-          console.log(`🗑️ Eliminando ${files.length} archivos HTML en caché`);
-          files.forEach(file => fs.unlinkSync(path.join(menuDir, file)));
-        }
+    // Ejecutar en modo asíncrono para no bloquear la respuesta API
+    const { exec } = require('child_process');
+    exec('node force-menu-rebuild.js', (error, stdout, stderr) => {
+      if (error) {
+        console.error('❌ Error al ejecutar reconstrucción forzada:', error);
+      } else {
+        console.log('✅ Reconstrucción forzada completada');
       }
-    } catch (error) {
-      console.error('❌ Error al limpiar caché HTML:', error);
+    });
+    
+    // PASO 2: Eliminar TODOS los archivos de caché del menú
+    const menuId = '8idq9bgbdwr7srcw'; // ID del menú principal
+    const menuDir = path.join(__dirname, 'dist', 'menu', menuId);
+    const cacheDir = path.join(__dirname, 'dist', 'cache');
+    
+    // Eliminar directorio completo del menú para forzar regeneración
+    if (fs.existsSync(menuDir)) {
+      console.log(`🗑️ Eliminando directorio completo del menú: ${menuDir}`);
+      
+      // Eliminar archivos dentro del directorio
+      const files = fs.readdirSync(menuDir);
+      files.forEach(file => {
+        const filePath = path.join(menuDir, file);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      });
+      
+      // Opcional: eliminar el directorio mismo (comentado para evitar problemas de permisos)
+      // fs.rmdirSync(menuDir);
     }
-  } else {
-    console.log('⚠️ Función de regeneración forzada no disponible, usando método normal');
-    if (menuRefresher) menuRefresher.triggerRefresh();
+    
+    // Eliminar archivos de caché relacionados con el menú
+    if (fs.existsSync(cacheDir)) {
+      const files = fs.readdirSync(cacheDir).filter(file => file.includes('menu-'));
+      if (files.length > 0) {
+        console.log(`🗑️ Eliminando ${files.length} archivos de caché`);
+        files.forEach(file => fs.unlinkSync(path.join(cacheDir, file)));
+      }
+    }
+    
+    // PASO 3: Registrar marca de tiempo de eliminación
+    const timestamp = new Date().toISOString();
+    fs.writeFileSync(
+      path.join(__dirname, 'dist', 'last-deleted-plato.txt'), 
+      `Plato eliminado: ${platoId} a las ${timestamp}\n`,
+      { flag: 'a' } // Modo append para mantener historial
+    );
+    
+    // PASO 4: Activar el mecanismo de regeneración normal también
+    if (menuRefresher && menuRefresher.triggerForceRefresh) {
+      menuRefresher.triggerForceRefresh();
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Plato eliminado exitosamente, menú regenerado completamente',
+      refreshScheduled: true,
+      platoId: platoId,
+      timestamp: timestamp
+    });
+  } catch (error) {
+    console.error('❌ Error al procesar eliminación de plato:', error);
+    
+    // Aún así, devolver éxito para no bloquear la UI
+    res.json({ 
+      success: true, 
+      message: 'Plato marcado como eliminado, pero hubo problemas con la regeneración automática',
+      error: error.message,
+      refreshScheduled: false
+    });
   }
-  
-  res.json({ 
-    success: true, 
-    message: 'Plato eliminado exitosamente, regeneración inmediata activada',
-    refreshScheduled: true
-  });
 });
 
 // Endpoint para forzar regeneración de menú

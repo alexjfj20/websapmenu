@@ -1,19 +1,24 @@
 #!/bin/bash
 # Script simple para despliegue en Render
 
-echo "Iniciando despliegue en Render..."
+echo "===== Iniciando despliegue en Render ====="
 
-# Limpiar caché
+# Asegurar que los archivos de script tengan permisos adecuados
+chmod +x build-without-eslint.sh
+chmod +x start.sh
+
+# Limpiar caché e instalar solo dependencias esenciales
+echo "===== Limpiando caché ====="
 rm -rf node_modules package-lock.json
 
-# Instalar solo dependencias esenciales para el servidor
+echo "===== Instalando dependencias esenciales ====="
 npm install express dotenv cors
 
 # Crear directorio dist si no existe
 mkdir -p dist
 
 # Crear una página de mantenimiento básica como fallback
-echo "Creando página de mantenimiento básica..."
+echo "===== Creando página de mantenimiento básica ====="
 cat > dist/index.html << 'EOL'
 <!DOCTYPE html>
 <html>
@@ -37,8 +42,26 @@ cat > dist/index.html << 'EOL'
 </html>
 EOL
 
-# Intentar construir la aplicación (si hay tiempo y recursos)
-echo "Intentando construir la aplicación..."
-node build-without-eslint.js || echo "Se usará la página de mantenimiento"
+# Intentar construir la aplicación con diferentes métodos
+echo "===== Intentando construir la aplicación ====="
 
-echo "Despliegue completado."
+# Método 1: Script de node
+echo "Método 1: Usando script de Node..."
+node build-without-eslint.js || {
+  echo "El método 1 falló, intentando método 2..."
+  
+  # Método 2: Script de shell
+  echo "Método 2: Usando script de shell..."
+  bash build-without-eslint.sh || {
+    echo "El método 2 falló, intentando método 3..."
+    
+    # Método 3: Vue CLI directamente
+    echo "Método 3: Usando Vue CLI directamente..."
+    export VUE_CLI_SKIP_PLUGINS=eslint
+    npx vue-cli-service build --skip-plugins eslint --mode production || {
+      echo "Todos los métodos fallaron. Se usará la página de mantenimiento."
+    }
+  }
+}
+
+echo "===== Despliegue completado ====="

@@ -4,8 +4,9 @@
   "private": true,  "scripts": {
     "serve": "vue-cli-service serve",
     "build": "node build-without-eslint.js",
+    "build:shell": "bash build-without-eslint.sh",
     "build:simple": "vue-cli-service build --skip-plugins eslint",
-    "build:render": "node render-build.js",
+    "build:render": "node render-deploy.sh",
     "lint": "vue-cli-service lint",
     "start": "node server.js",
     "check-install": "node check-install.js"

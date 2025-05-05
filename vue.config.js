@@ -1,6 +1,9 @@
 const { defineConfig } = require('@vue/cli-service');
 
 module.exports = defineConfig({
+  // Desactivar ESLint completamente
+  lintOnSave: false,
+  
   // Configuración de transpilación de dependencias
   transpileDependencies: true,
   

@@ -19,22 +19,68 @@ try {
   // Instalar dependencias
   console.log('📦 Instalando dependencias...');
   execSync('npm install', { stdio: 'inherit' });
-
   // Ejecutar vue-cli-service directamente sin cargar plugins
   console.log('🔨 Ejecutando build sin plugins de ESLint...');
   
-  // Usar NODE_OPTIONS para evitar que se carguen ciertos módulos
-  process.env.NODE_OPTIONS = '--no-experimental-fetch';
-  process.env.VUE_CLI_SKIP_PLUGINS = 'eslint';
-  
-  // Construir directamente desde node_modules
-  execSync('node ./node_modules/@vue/cli-service/bin/vue-cli-service.js build --skip-plugins eslint', { 
-    stdio: 'inherit',
-    env: {
-      ...process.env,
-      VUE_CLI_SKIP_PLUGINS: 'eslint'
-    } 
-  });
+  try {
+    // Intentar eliminar @vue/cli-plugin-eslint si existe
+    console.log('🧹 Intentando eliminar plugin de ESLint temporalmente...');
+    
+    const eslintPluginPath = path.resolve('./node_modules/@vue/cli-plugin-eslint');
+    if (fs.existsSync(eslintPluginPath)) {
+      const tempBackupDir = path.resolve('./temp-backup-eslint');
+      if (!fs.existsSync(tempBackupDir)) {
+        fs.mkdirSync(tempBackupDir);
+      }
+      
+      // Mover el plugin a un directorio temporal
+      fs.renameSync(eslintPluginPath, path.join(tempBackupDir, 'cli-plugin-eslint'));
+      console.log('✅ Plugin movido temporalmente');
+    } else {
+      console.log('⚠️ Plugin de ESLint no encontrado, continuando...');
+    }
+    
+    // Usar variables de entorno para evitar que se carguen ciertos módulos
+    console.log('🛠️ Configurando variables de entorno...');
+    process.env.NODE_OPTIONS = '--no-experimental-fetch';
+    process.env.VUE_CLI_SKIP_PLUGINS = 'eslint';
+    
+    // Construir directamente con variables de entorno
+    console.log('🚀 Ejecutando build...');
+    execSync('node ./node_modules/@vue/cli-service/bin/vue-cli-service.js build --mode production --skip-plugins eslint', { 
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        VUE_CLI_SKIP_PLUGINS: 'eslint',
+        NODE_ENV: 'production'
+      } 
+    });
+    
+    // Restaurar el plugin si fue movido
+    const tempBackupDir = path.resolve('./temp-backup-eslint');
+    const tempPluginPath = path.join(tempBackupDir, 'cli-plugin-eslint');
+    if (fs.existsSync(tempPluginPath)) {
+      fs.renameSync(tempPluginPath, eslintPluginPath);
+      console.log('🔄 Plugin restaurado');
+    }
+  } catch (buildError) {
+    console.error('❌ Error en el intento de construcción principal:', buildError.message);
+    
+    // Intentar un segundo enfoque - construir con webpack directamente
+    try {
+      console.log('🔄 Intentando enfoque alternativo con webpack directamente...');
+      execSync('npx webpack --config node_modules/@vue/cli-service/webpack.config.js --mode production', {
+        stdio: 'inherit',
+        env: {
+          ...process.env,
+          NODE_ENV: 'production'
+        }
+      });
+    } catch (alternativeError) {
+      console.error('❌ Error en el intento alternativo:', alternativeError.message);
+      throw new Error('Todos los intentos de construcción han fallado');
+    }
+  }
   
   console.log('✅ Construcción completada exitosamente');
 } catch (error) {

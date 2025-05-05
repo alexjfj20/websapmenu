@@ -22,6 +22,10 @@ npm install express dotenv cors
 
 echo "===== Iniciando servidor ====="
 
+# Limpiar platos eliminados y forzar regeneración del menú
+echo "===== Limpiando platos eliminados del menú ====="
+node clean-deleted-menu-items.js || echo "⚠️ Error al limpiar platos eliminados, continuando..."
+
 # Asegurarse de que se crean las páginas específicas de menú
 echo "Verificando páginas de menú compartido..."
 if [ ! -d "dist/menu" ] || [ ! -d "dist/menu/8idq9bgbdwr7srcw" ]; then

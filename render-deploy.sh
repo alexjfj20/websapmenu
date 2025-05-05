@@ -26,7 +26,7 @@ npm install express dotenv cors webpack-cli
 
 # Asegurarse de que los archivos del servidor estén disponibles
 echo "===== Copiando archivos del servidor ====="
-cp -f server.js cache-server.js api-mocks.js server-fixes.js api-interceptor.js inject-interceptor.js modify-index-html.js patch-compiled-js.js patch-sync-service.js create-menu-page.js insert-localhost-interceptor.js generate-menu-pages.js static-menu-page.js fix-business-info-error.js fix-menu-cache.js initialize-indexeddb.js fix-duplicate-definitions.js auto-refresh-menu.js menu-backup.html menu-not-found.html ./dist/ 2>/dev/null || :
+cp -f server.js cache-server.js api-mocks.js server-fixes.js api-interceptor.js inject-interceptor.js modify-index-html.js patch-compiled-js.js patch-sync-service.js create-menu-page.js insert-localhost-interceptor.js generate-menu-pages.js static-menu-page.js fix-business-info-error.js fix-menu-cache.js initialize-indexeddb.js fix-duplicate-definitions.js auto-refresh-menu.js clean-deleted-menu-items.js menu-backup.html menu-not-found.html ./dist/ 2>/dev/null || :
 echo "✅ Archivos del servidor copiados"
 
 # Crear directorio dist si no existe

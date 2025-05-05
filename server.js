@@ -162,14 +162,35 @@ app.put('/api/platos/:id', (req, res) => {
 app.delete('/api/platos/:id', (req, res) => {
   console.log(`🗑️ Eliminando plato con ID: ${req.params.id}`);
   
-  // Programar regeneración de menú
-  if (menuRefresher) {
-    menuRefresher.triggerRefresh();
+  // Forzar regeneración inmediata del menú
+  if (menuRefresher && menuRefresher.triggerForceRefresh) {
+    console.log('⚡ Activando regeneración FORZADA por eliminación de plato');
+    menuRefresher.triggerForceRefresh();
+    
+    // También eliminar los archivos HTML de caché para asegurar regeneración
+    try {
+      const menuId = '8idq9bgbdwr7srcw'; // ID del menú principal
+      const menuDir = path.join(__dirname, 'dist', 'menu', menuId);
+      
+      if (fs.existsSync(menuDir)) {
+        // Buscar archivos HTML para eliminar
+        const files = fs.readdirSync(menuDir).filter(file => file.endsWith('.html'));
+        if (files.length > 0) {
+          console.log(`🗑️ Eliminando ${files.length} archivos HTML en caché`);
+          files.forEach(file => fs.unlinkSync(path.join(menuDir, file)));
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error al limpiar caché HTML:', error);
+    }
+  } else {
+    console.log('⚠️ Función de regeneración forzada no disponible, usando método normal');
+    if (menuRefresher) menuRefresher.triggerRefresh();
   }
   
   res.json({ 
     success: true, 
-    message: 'Plato eliminado exitosamente',
+    message: 'Plato eliminado exitosamente, regeneración inmediata activada',
     refreshScheduled: true
   });
 });
@@ -178,15 +199,91 @@ app.delete('/api/platos/:id', (req, res) => {
 app.post('/api/admin/refresh-menu', (req, res) => {
   console.log('🔄 Solicitud para regenerar menús');
   
+  // Verificar si se solicita regeneración forzada
+  const forceRefresh = req.query.force === 'true' || 
+                      (req.body && req.body.force === true);
+  
   if (menuRefresher) {
-    const success = menuRefresher.triggerRefresh();
-    if (success) {
-      res.json({ success: true, message: 'Regeneración de menú programada' });
+    let success = false;
+    
+    if (forceRefresh && menuRefresher.triggerForceRefresh) {
+      console.log('⚡ Solicitada regeneración FORZADA de menú');
+      success = menuRefresher.triggerForceRefresh();
+      
+      if (success) {
+        res.json({ 
+          success: true, 
+          message: 'Regeneración FORZADA de menú programada para ejecución inmediata',
+          forced: true
+        });
+      } else {
+        res.status(500).json({ success: false, message: 'Error al programar regeneración forzada' });
+      }
     } else {
-      res.status(500).json({ success: false, message: 'Error al programar regeneración' });
+      success = menuRefresher.triggerRefresh();
+      
+      if (success) {
+        res.json({ success: true, message: 'Regeneración de menú programada' });
+      } else {
+        res.status(500).json({ success: false, message: 'Error al programar regeneración' });
+      }
     }
   } else {
     res.status(501).json({ success: false, message: 'Servicio de regeneración no disponible' });
+  }
+});
+
+// Endpoint específico para limpiar caché y regenerar todo
+app.post('/api/admin/reset-menu-cache', (req, res) => {
+  console.log('🧹 Solicitud para limpiar caché de menú y regenerar desde cero');
+  
+  try {
+    // Eliminar todos los archivos de caché
+    const menuId = '8idq9bgbdwr7srcw'; // ID del menú principal
+    const menuDir = path.join(__dirname, 'dist', 'menu', menuId);
+    const cacheDir = path.join(__dirname, 'dist', 'cache');
+    
+    // Eliminar archivos HTML del menú
+    if (fs.existsSync(menuDir)) {
+      fs.readdirSync(menuDir)
+        .filter(file => file.endsWith('.html'))
+        .forEach(file => fs.unlinkSync(path.join(menuDir, file)));
+      console.log('🗑️ Archivos HTML de menú eliminados');
+    }
+    
+    // Eliminar archivos de caché JSON
+    if (fs.existsSync(cacheDir)) {
+      fs.readdirSync(cacheDir)
+        .filter(file => file.includes('menu-'))
+        .forEach(file => fs.unlinkSync(path.join(cacheDir, file)));
+      console.log('🗑️ Archivos JSON de caché eliminados');
+    }
+    
+    // Forzar regeneración si está disponible
+    if (menuRefresher && menuRefresher.triggerForceRefresh) {
+      menuRefresher.triggerForceRefresh();
+    } else if (menuRefresher) {
+      menuRefresher.triggerRefresh();
+    }
+    
+    // Forzar regeneración ejecutando scripts directamente
+    try {
+      execSync('node static-menu-page.js', { stdio: 'inherit' });
+      console.log('✅ Página estática de menú regenerada');
+    } catch (error) {
+      console.error('❌ Error al regenerar menú:', error);
+    }
+    
+    res.json({
+      success: true,
+      message: 'Caché limpiada y regeneración iniciada'
+    });
+  } catch (error) {
+    console.error('❌ Error al limpiar caché:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al limpiar caché: ' + error.message
+    });
   }
 });
 

@@ -4,7 +4,6 @@
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
-    // Build script - Consider cleaning cache in Render's build command instead
     "build": "vue-cli-service build",
     "build:render": "node render-build.js",
     "lint": "vue-cli-service lint",

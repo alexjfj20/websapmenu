@@ -129,8 +129,7 @@ function processJSFile(directory, filename) {
         });
       }
     });
-    
-    // 4. Parche para añadir código de manejo de errores en el procesamiento de menús
+      // 4. Parche para añadir código de manejo de errores en el procesamiento de menús
     if (content.includes('SharedMenuView') && content.includes('Error al cargar')) {
       console.log(`✅ Encontrado código de SharedMenuView en ${filename}`);
       
@@ -159,6 +158,48 @@ function processJSFile(directory, filename) {
           if (${respVar} && typeof ${respVar} === 'object') {
             ${objVar}.businessInfo`;
       });
+    }
+    
+    // 5. Parche para evitar solicitudes a localhost en entorno de producción
+    if (content.includes('localhost') && (content.includes('raw/ping') || content.includes('puerto'))) {
+      console.log(`✅ Encontradas solicitudes a localhost en ${filename}`);
+      
+      // Parche para verificar si estamos en producción (hostname diferente a localhost)
+      const localhostCheckPattern = /Probando en puerto: (\d+)/g;
+      if (localhostCheckPattern.test(content)) {
+        content = content.replace(localhostCheckPattern, (match, port) => {
+          return `
+          // Verificar si estamos en producción
+          if (window.location.hostname !== "localhost" && 
+              window.location.hostname !== "127.0.0.1") {
+            console.log("✅ Detectado entorno de producción, omitiendo pruebas de puertos locales");
+            return false; // Evitar pruebas de puertos en producción
+          }
+          console.log("Probando en puerto: ${port}")`;
+        });
+      }
+      
+      // Parche para las solicitudes a localhost
+      const localhostRequestPattern = /localhost:(\d+)/g;
+      content = content.replace(localhostRequestPattern, (match, port) => {
+        return `" + (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" ? "localhost" : window.location.hostname) + ":${port}`;
+      });
+      
+      // Parche para la función de prueba de puertos
+      if (content.includes('❌ No se encontró el servidor en ningún puerto común')) {
+        const portTestingPattern = /🔄 Probando puertos alternativos/;
+        content = content.replace(portTestingPattern, (match) => {
+          return `
+          // Verificar si estamos en producción
+          if (window.location.hostname !== "localhost" && 
+              window.location.hostname !== "127.0.0.1") {
+            console.log("✅ Detectado entorno de producción, usando API de producción");
+            // En producción, usar la URL actual
+            return window.location.origin + "/api";
+          }
+          ${match}`; 
+        });
+      }
     }
     
     // Verificar si se realizaron cambios

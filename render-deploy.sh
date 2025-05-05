@@ -16,7 +16,7 @@ npm install express dotenv cors webpack-cli
 
 # Asegurarse de que los archivos del servidor estén disponibles
 echo "===== Copiando archivos del servidor ====="
-cp -f server.js api-mocks.js server-fixes.js api-interceptor.js inject-interceptor.js modify-index-html.js patch-compiled-js.js create-menu-page.js ./dist/ 2>/dev/null || :
+cp -f server.js api-mocks.js server-fixes.js api-interceptor.js inject-interceptor.js modify-index-html.js patch-compiled-js.js patch-sync-service.js create-menu-page.js insert-localhost-interceptor.js ./dist/ 2>/dev/null || :
 echo "✅ Archivos del servidor copiados"
 
 # Crear directorio dist si no existe
@@ -81,6 +81,10 @@ node build-without-eslint.js || {
 echo "===== Inyectando interceptor de API ====="
 node inject-interceptor.js || echo "⚠️ Error al inyectar interceptor. Continuando..."
 
+# Insertar interceptor de localhost
+echo "===== Insertando interceptor de localhost ====="
+node insert-localhost-interceptor.js || echo "⚠️ Error al insertar interceptor de localhost. Continuando..."
+
 # Modificar index.html para agregar código de redirección
 echo "===== Modificando index.html para menús compartidos ====="
 node modify-index-html.js || echo "⚠️ Error al modificar index.html. Continuando..."
@@ -88,6 +92,10 @@ node modify-index-html.js || echo "⚠️ Error al modificar index.html. Continu
 # Parchear los archivos JS compilados
 echo "===== Parcheando archivos JS compilados ====="
 node patch-compiled-js.js || echo "⚠️ Error al parchear archivos JS. Continuando..."
+
+# Parchear específicamente el servicio de sincronización
+echo "===== Aplicando parche para evitar localhost en producción ====="
+node patch-sync-service.js || echo "⚠️ Error al parchear syncService. Continuando..."
 
 # Crear página HTML específica para menú compartido
 echo "===== Creando página HTML específica para menú compartido ====="

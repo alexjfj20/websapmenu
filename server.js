@@ -193,9 +193,16 @@ app.use('/api', (req, res) => {
   });
 });
 
-// Ruta raw para pruebas de conectividad
+// Rutas raw para pruebas de conectividad
 app.get('/raw/ping', (req, res) => {
   res.send('pong');
+});
+
+// Rutas adicionales para pruebas de conectividad en diferentes puertos
+[3000, 5000, 8000, 8080].forEach(port => {
+  app.get(`/raw/ping/${port}`, (req, res) => {
+    res.send(`pong:${port}`);
+  });
 });
 
 // Para cualquier otra ruta, enviar el archivo index.html

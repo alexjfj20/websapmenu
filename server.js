@@ -56,10 +56,18 @@ app.get('/api/business/:id', (req, res) => {
   res.json(businessData);
 });
 
+// API endpoint para datos del menú compartido (para solicitudes directas de datos)
+app.get('/api/shared-menu/:shareId', (req, res) => {
+  console.log(`Solicitud API de menú compartido con ID: ${req.params.shareId}`);
+  // Usar datos simulados del menú
+  const menuData = menuMock.generateMenu(req.params.shareId);
+  res.json(menuData);
+});
+
 // API endpoint para menú compartido (URL común en la aplicación)
 app.get('/menu/:shareId', (req, res) => {
-  // Esta ruta envía el index.html pero registra la solicitud para debugging
-  console.log(`Solicitud de menú compartido con ID: ${req.params.shareId}`);
+  // Esta ruta envía el index.html para que la aplicación SPA pueda manejarla
+  console.log(`Solicitud de página de menú compartido con ID: ${req.params.shareId}`);
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 

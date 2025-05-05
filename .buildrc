@@ -1,0 +1,12 @@
+#!/bin/bash
+# Este archivo contiene configuraciones adicionales para el proceso de construcción
+
+# Si vue-cli-service no está disponible, instalarlo antes de la construcción
+if ! [ -x "$(command -v vue-cli-service)" ]; then
+  echo "⚠️ vue-cli-service no encontrado, instalando..."
+  npm install -g @vue/cli-service
+fi
+
+# Asegurarse de que los plugins necesarios estén disponibles
+echo "📦 Verificando plugins de Vue CLI..."
+npm install @vue/cli-plugin-babel @vue/cli-plugin-eslint --no-save

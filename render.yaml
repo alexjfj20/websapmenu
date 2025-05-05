@@ -1,9 +1,10 @@
 services:
   # Servicio web para la aplicación Vue.js
   - type: web
-    name: websap
+    name: websapmenu
     env: node
-    buildCommand: npm install && npm run build
+    repo: https://github.com/alexjfj20/websapmenu
+    buildCommand: npm install && npm run render-build
     startCommand: npm start
     envVars:
       - key: NODE_ENV

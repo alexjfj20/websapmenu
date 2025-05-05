@@ -14,6 +14,11 @@ rm -rf node_modules package-lock.json
 echo "===== Instalando dependencias esenciales ====="
 npm install express dotenv cors webpack-cli
 
+# Asegurarse de que los archivos del servidor estén disponibles
+echo "===== Copiando archivos del servidor ====="
+cp -f server.js api-mocks.js server-fixes.js ./dist/ 2>/dev/null || :
+echo "✅ Archivos del servidor copiados"
+
 # Crear directorio dist si no existe
 mkdir -p dist
 

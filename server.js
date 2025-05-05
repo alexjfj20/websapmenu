@@ -11,16 +11,78 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 console.log('✅ CORS habilitado');
 
+// Aplicar correcciones específicas como middleware
+app.use(fixShareMenuRequest);
+console.log('✅ Correcciones específicas aplicadas');
+
 // Middleware para servir archivos estáticos desde 'dist'
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// API endpoints
+// Middleware para procesar JSON
+app.use(express.json());
+
+// API endpoints básicos para desarrollo/mantenimiento
 app.get('/api/status', (req, res) => {
   res.json({ 
     status: 'OK', 
     message: 'Servidor en mantenimiento', 
     time: new Date().toISOString() 
   });
+});
+
+// Endpoint para pruebas de conectividad
+app.get('/api/test/ping', (req, res) => {
+  res.json({ status: 'OK', message: 'pong' });
+});
+
+// API endpoint para información del menú
+app.get('/api/menu/:id', (req, res) => {
+  // Usar datos simulados del menú
+  const menuData = menuMock.generateMenu(req.params.id);
+  console.log(`Sirviendo menú simulado para ID: ${req.params.id}`);
+  
+  // Devolver con un pequeño retraso para simular latencia de red
+  setTimeout(() => {
+    res.json(menuData);
+  }, 300);
+});
+
+// API endpoint para información del negocio
+app.get('/api/business/:id', (req, res) => {
+  // Usar datos simulados del negocio
+  const businessData = businessInfoMock.generateBusinessInfo(req.params.id);
+  console.log(`Sirviendo información de negocio simulada para ID: ${req.params.id}`);
+  
+  res.json(businessData);
+});
+
+// API endpoint para menú compartido (URL común en la aplicación)
+app.get('/menu/:shareId', (req, res) => {
+  // Esta ruta envía el index.html pero registra la solicitud para debugging
+  console.log(`Solicitud de menú compartido con ID: ${req.params.shareId}`);
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
+
+// API endpoint para sincronización
+app.get('/api/sync/status', (req, res) => {
+  res.json({ 
+    status: 'maintenance',
+    message: 'Servidor en mantenimiento. Sincronización no disponible.',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Para rutas de API no manejadas explícitamente
+app.use('/api', (req, res) => {
+  res.status(503).json({ 
+    error: 'API en mantenimiento',
+    message: 'Esta funcionalidad estará disponible pronto'
+  });
+});
+
+// Ruta raw para pruebas de conectividad
+app.get('/raw/ping', (req, res) => {
+  res.send('pong');
 });
 
 // Para cualquier otra ruta, enviar el archivo index.html

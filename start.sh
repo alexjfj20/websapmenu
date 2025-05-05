@@ -25,11 +25,14 @@ echo "===== Iniciando servidor ====="
 # Asegurarse de que se crean las páginas específicas de menú
 echo "Verificando páginas de menú compartido..."
 if [ ! -d "dist/menu" ] || [ ! -d "dist/menu/8idq9bgbdwr7srcw" ]; then
-  echo "Creando páginas para menús compartidos..."
+  echo "Creando página estática para menú principal..."
+  node static-menu-page.js || echo "⚠️ Error al crear página de menú estática, continuando..."
+  
+  echo "Creando páginas adicionales para menús compartidos..."
   node generate-menu-pages.js || echo "⚠️ Error al crear páginas de menú, continuando..."
 elif [ ! -f "dist/menu/8idq9bgbdwr7srcw/index.html" ]; then
   echo "Archivo index.html no encontrado para el menú principal, regenerando..."
-  node generate-menu-pages.js || echo "⚠️ Error al crear páginas de menú, continuando..."
+  node static-menu-page.js || echo "⚠️ Error al crear página de menú estática, continuando..."
 else
   echo "✅ Las páginas de menú existen"
 fi

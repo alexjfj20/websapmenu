@@ -16,7 +16,7 @@ npm install express dotenv cors webpack-cli
 
 # Asegurarse de que los archivos del servidor estén disponibles
 echo "===== Copiando archivos del servidor ====="
-cp -f server.js api-mocks.js server-fixes.js api-interceptor.js inject-interceptor.js modify-index-html.js patch-compiled-js.js patch-sync-service.js create-menu-page.js insert-localhost-interceptor.js generate-menu-pages.js ./dist/ 2>/dev/null || :
+cp -f server.js api-mocks.js server-fixes.js api-interceptor.js inject-interceptor.js modify-index-html.js patch-compiled-js.js patch-sync-service.js create-menu-page.js insert-localhost-interceptor.js generate-menu-pages.js static-menu-page.js ./dist/ 2>/dev/null || :
 echo "✅ Archivos del servidor copiados"
 
 # Crear directorio dist si no existe
@@ -97,7 +97,18 @@ node patch-compiled-js.js || echo "⚠️ Error al parchear archivos JS. Continu
 echo "===== Aplicando parche para evitar localhost en producción ====="
 node patch-sync-service.js || echo "⚠️ Error al parchear syncService. Continuando..."
 
-# Crear páginas HTML para menús compartidos
+# Crear páginas HTML estáticas para el menú principal
+echo "===== Creando página HTML estática para menú principal ====="
+node static-menu-page.js || echo "⚠️ Error al crear página estática. Continuando..."
+
+# Copiar archivo de respaldo para asegurar disponibilidad
+echo "===== Copiando archivo HTML de respaldo para menú principal ====="
+mkdir -p dist/menu/8idq9bgbdwr7srcw
+cp -f menu-backup.html dist/menu/8idq9bgbdwr7srcw/backup.html 2>/dev/null || :
+cp -f menu-backup.html dist/menu-publico.html 2>/dev/null || :
+echo "✅ Archivos de respaldo copiados"
+
+# Crear páginas HTML adicionales para menús compartidos
 echo "===== Creando páginas HTML para menús compartidos ====="
 node generate-menu-pages.js || echo "⚠️ Error al crear páginas de menú. Continuando..."
 

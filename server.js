@@ -93,8 +93,31 @@ app.get('/api/business/:id', (req, res) => {
 // API endpoint para datos del menú compartido (para solicitudes directas de datos)
 app.get('/api/shared-menu/:shareId', (req, res) => {
   console.log(`Solicitud API de menú compartido con ID: ${req.params.shareId}`);
+  
+  // Establecer encabezados para evitar problemas CORS y caché
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET');
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  
   // Usar datos simulados del menú
   const menuData = menuMock.generateMenu(req.params.shareId);
+  res.json(menuData);
+});
+
+// API endpoint alternativo con URL más corta
+app.get('/api/menu-publico', (req, res) => {
+  console.log('Solicitud API para menú público (URL corta)');
+  
+  // Usar el ID del menú principal
+  const menuId = '8idq9bgbdwr7srcw';
+  
+  // Establecer encabezados
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Content-Type', 'application/json');
+  
+  // Usar datos simulados del menú
+  const menuData = menuMock.generateMenu(menuId);
   res.json(menuData);
 });
 
@@ -102,120 +125,134 @@ app.get('/api/shared-menu/:shareId', (req, res) => {
 app.get('/menu/:shareId', (req, res) => {
   const shareId = req.params.shareId;
   
+  console.log(`📩 Solicitud recibida para menú compartido ID: ${shareId}`);
+  
   // Detectar si es una solicitud de API (Accept: application/json) o de página
   const acceptHeader = req.get('Accept') || '';
   const userAgent = req.get('User-Agent') || '';
   const isApiRequest = acceptHeader.includes('application/json') || 
                       req.xhr || 
                       req.query.format === 'json' ||
-                      req.path.includes('/api/');
+                      req.query.api === 'true';
   
   if (isApiRequest) {
     // Si es una solicitud de API, devolver datos JSON
-    console.log(`Solicitud de API para menú compartido con ID: ${shareId}`);
+    console.log(`🔄 Sirviendo datos JSON para menú: ${shareId}`);
     const menuData = menuMock.generateMenu(shareId);
-    res.json(menuData);
-  } else {
-    // Si es una solicitud de página, intentar servir la página específica del menú
-    console.log(`Solicitud de página de menú compartido con ID: ${shareId}`);
+    return res.json(menuData);
+  }
+  
+  // Para solicitudes normales, intentar servir la página estática
+  console.log(`🌐 Sirviendo página HTML para menú: ${shareId}`);
+  
+  // CASO ESPECIAL - Menú principal
+  if (shareId === '8idq9bgbdwr7srcw') {
+    console.log('🔑 Detectado menú principal, usando enfoque especial');
     
-    // Comprobar si existe una página específica para este menú
-    const specificMenuPath = path.join(__dirname, 'dist', 'menu', shareId, 'index.html');
+    // Intentar cargar la página estática específica
+    const specialMenuPath = path.join(__dirname, 'dist', 'menu', shareId, 'index.html');
     
-    if (fs.existsSync(specificMenuPath)) {
-      console.log('✅ Sirviendo página específica del menú');
-      res.sendFile(specificMenuPath);
-    } else {
-      // Si no existe, generar una página específica para este menú
-      console.log('⚠️ No se encontró página específica, generando una nueva');
+    if (fs.existsSync(specialMenuPath)) {
+      console.log('✅ Enviando página estática específica');
+      return res.sendFile(specialMenuPath);
+    }
+    
+    // Si no existe, intentar generarla
+    try {
+      console.log('🔄 Generando página estática para menú principal...');
+      require('./static-menu-page');
       
-      // Crear la estructura de directorios si no existe
-      const menuDir = path.join(__dirname, 'dist', 'menu');
-      if (!fs.existsSync(menuDir)) {
-        fs.mkdirSync(menuDir, { recursive: true });
+      // Verificar si se creó correctamente
+      if (fs.existsSync(specialMenuPath)) {
+        console.log('✅ Página estática generada correctamente');
+        return res.sendFile(specialMenuPath);
       }
-      
-      const shareIdDir = path.join(menuDir, shareId);
-      if (!fs.existsSync(shareIdDir)) {
-        fs.mkdirSync(shareIdDir, { recursive: true });
-      }
-      
-      // Generar los datos del menú
-      const menuData = menuMock.generateMenu(shareId);
-      
-      try {
-        // Intentar crear la página usando el script existente
-        console.log('🔄 Generando página HTML para el menú compartido...');
-        require('./create-menu-page');
-        
-        // Comprobar si se creó la página
-        if (fs.existsSync(specificMenuPath)) {
-          console.log('✅ Página generada correctamente, enviando al cliente');
-          return res.sendFile(specificMenuPath);
-        }
-      } catch (error) {
-        console.error('❌ Error al generar la página:', error);
-      }
-      
-      // Si no se pudo generar o cargar el script, crear una página simple
-      console.log('⚠️ Usando generación simplificada para la página de menú');
-      
-      // HTML básico pero completo para el menú compartido
-      const simpleHtml = `
-      <!DOCTYPE html>
-      <html lang="es">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Menú - ${menuData.businessInfo.name}</title>
-        <style>
-          body { font-family: Arial, sans-serif; margin: 0; padding: 20px; max-width: 800px; margin: 0 auto; }
-          .header { text-align: center; margin-bottom: 20px; padding: 20px; background-color: #2c3e50; color: white; }
-          .category { margin-bottom: 20px; background-color: white; padding: 15px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-          .item { margin-bottom: 15px; border-bottom: 1px dashed #eee; padding-bottom: 15px; }
-          .item:last-child { border-bottom: none; }
-          .item-name { font-weight: bold; }
-          .item-price { color: #e74c3c; font-weight: bold; }
-          .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #777; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>${menuData.businessInfo.name || 'Menú'}</h1>
-          <p>${menuData.businessInfo.description || ''}</p>
-        </div>
-        
-        <div id="menu-content">
-          ${menuData.categories.map(cat => `
-            <div class="category">
-              <h2>${cat.name}</h2>
-              ${cat.platos.map(item => `
-                <div class="item">
-                  <div class="item-name">${item.name}</div>
-                  <div class="item-description">${item.description || ''}</div>
-                  <div class="item-price">$${item.price.toFixed(2)}</div>
-                </div>
-              `).join('')}
+    } catch (error) {
+      console.error('❌ Error generando página estática:', error);
+    }
+  }
+  
+  // Si llegamos aquí, usar el enfoque normal
+  const specificMenuPath = path.join(__dirname, 'dist', 'menu', shareId, 'index.html');
+  
+  if (fs.existsSync(specificMenuPath)) {
+    // Enviar la página específica si existe
+    console.log('✅ Sirviendo página existente del menú');
+    return res.sendFile(specificMenuPath);
+  }
+  
+  // Si no existe, generar una página específica para este menú
+  console.log('⚠️ No se encontró página específica, generando una nueva');
+  
+  // Crear la estructura de directorios si no existe
+  const menuDir = path.join(__dirname, 'dist', 'menu');
+  if (!fs.existsSync(menuDir)) {
+    fs.mkdirSync(menuDir, { recursive: true });
+  }
+  
+  const shareIdDir = path.join(menuDir, shareId);
+  if (!fs.existsSync(shareIdDir)) {
+    fs.mkdirSync(shareIdDir, { recursive: true });
+  }
+  
+  // Generar los datos del menú
+  const menuData = menuMock.generateMenu(shareId);
+  
+  // Generar HTML simple sin dependencias
+  const simpleHtml = `
+  <!DOCTYPE html>
+  <html lang="es">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menú - ${menuData.businessInfo.name}</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 0; padding: 20px; max-width: 800px; margin: 0 auto; }
+      .header { text-align: center; margin-bottom: 20px; padding: 20px; background-color: #2c3e50; color: white; }
+      .category { margin-bottom: 20px; background-color: white; padding: 15px; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+      .item { margin-bottom: 15px; border-bottom: 1px dashed #eee; padding-bottom: 15px; }
+      .item:last-child { border-bottom: none; }
+      .item-name { font-weight: bold; }
+      .item-price { color: #e74c3c; font-weight: bold; }
+      .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #777; }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>${menuData.businessInfo.name || 'Menú'}</h1>
+      <p>${menuData.businessInfo.description || ''}</p>
+    </div>
+    
+    <div id="menu-content">
+      ${menuData.categories.map(cat => `
+        <div class="category">
+          <h2>${cat.name}</h2>
+          ${cat.platos.map(item => `
+            <div class="item">
+              <div class="item-name">${item.name}</div>
+              <div class="item-description">${item.description || ''}</div>
+              <div class="item-price">$${item.price.toFixed(2)}</div>
             </div>
           `).join('')}
         </div>
-        
-        <div class="footer">
-          <p>Dirección: ${menuData.businessInfo.address || 'No disponible'}</p>
-          <p>Teléfono: ${menuData.businessInfo.phone || 'No disponible'}</p>
-          <p>WebSAP © ${new Date().getFullYear()}</p>
-        </div>
-      </body>
-      </html>
-      `;
-      
-      // Guardar la página generada para futuros accesos
-      fs.writeFileSync(path.join(shareIdDir, 'index.html'), simpleHtml);
-      
-      // Enviar al cliente
-      res.send(simpleHtml);
-    }
-  }
+      `).join('')}
+    </div>
+    
+    <div class="footer">
+      <p>Dirección: ${menuData.businessInfo.address || 'No disponible'}</p>
+      <p>Teléfono: ${menuData.businessInfo.phone || 'No disponible'}</p>
+      <p>WebSAP © ${new Date().getFullYear()}</p>
+    </div>
+  </body>
+  </html>
+  `;
+  
+  // Guardar la página generada para futuros accesos
+  fs.writeFileSync(path.join(shareIdDir, 'index.html'), simpleHtml);
+  console.log('✅ Página generada y guardada para este menú');
+  
+  // Enviar al cliente
+  return res.send(simpleHtml);
 });
 
 // API endpoint para sincronización
@@ -245,6 +282,36 @@ app.get('/raw/ping', (req, res) => {
   app.get(`/raw/ping/${port}`, (req, res) => {
     res.send(`pong:${port}`);
   });
+});
+
+// Ruta directa para el menú principal (acceso más fácil)
+app.get('/menu-publico', (req, res) => {
+  console.log('🌟 Solicitud recibida para menú público (URL simplificada)');
+  
+  // Redirigir a la página del menú principal
+  const menuId = '8idq9bgbdwr7srcw';
+  const specificMenuPath = path.join(__dirname, 'dist', 'menu', menuId, 'index.html');
+  
+  if (fs.existsSync(specificMenuPath)) {
+    console.log('✅ Enviando página estática del menú principal');
+    return res.sendFile(specificMenuPath);
+  } else {
+    // Si no existe, intentar generarla
+    try {
+      console.log('🔄 Intentando generar página de menú principal...');
+      require('./static-menu-page');
+      
+      if (fs.existsSync(specificMenuPath)) {
+        console.log('✅ Página generada correctamente');
+        return res.sendFile(specificMenuPath);
+      }
+    } catch (error) {
+      console.error('❌ Error generando página de menú:', error);
+    }
+    
+    // Si todo falla, redirigir a la URL normal del menú
+    return res.redirect(`/menu/${menuId}`);
+  }
 });
 
 // Para cualquier otra ruta, enviar el archivo index.html

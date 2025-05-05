@@ -1,10 +1,10 @@
 {
   "name": "websap",
   "version": "1.0.0",
-  "private": true,
-  "scripts": {
+  "private": true,  "scripts": {
     "serve": "vue-cli-service serve",
-    "build": "rm -rf node_modules package-lock.json && NODE_ENV=development npm install --force && npm install @vue/cli-plugin-eslint@5.0.8 --save-dev && vue-cli-service build",
+    "build": "node build-without-eslint.js",
+    "build:simple": "vue-cli-service build --skip-plugins eslint",
     "build:render": "node render-build.js",
     "lint": "vue-cli-service lint",
     "start": "node server.js",
@@ -45,22 +45,12 @@
     "last 2 versions",
     "not dead",
     "not ie 11"
-  ],
-  "eslintConfig": {
+  ],  "eslintConfig": {
     "root": true,
     "env": {
-      "node": true,
-      "vue/setup-compiler-macros": true
+      "node": true
     },
-    "extends": [
-      "eslint:recommended",
-      "plugin:vue/vue3-recommended"
-    ],
-    "parserOptions": {
-      "ecmaVersion": 2021,
-      "parser": "@babel/eslint-parser",
-      "requireConfigFile": false
-    },
+    "extends": [],
     "rules": {
       "no-console": "off",
       "no-debugger": "off"

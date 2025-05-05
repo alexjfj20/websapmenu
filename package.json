@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
-    "build": "echo 'Cleaning cache...' && rm -rf node_modules package-lock.json && echo 'Forcing install (dev mode)...' && NODE_ENV=development npm install --force && echo 'Explicitly installing eslint plugin...' && npm install @vue/cli-plugin-eslint@5.0.8 --save-dev --force && echo 'Starting build...' && vue-cli-service build",
+    "build": "rm -rf node_modules package-lock.json && NODE_ENV=development npm install --force && npm install @vue/cli-plugin-eslint@5.0.8 --save-dev && vue-cli-service build",
     "build:render": "node render-build.js",
     "lint": "vue-cli-service lint",
     "start": "node server.js",
@@ -45,5 +45,25 @@
     "last 2 versions",
     "not dead",
     "not ie 11"
-  ]
+  ],
+  "eslintConfig": {
+    "root": true,
+    "env": {
+      "node": true,
+      "vue/setup-compiler-macros": true
+    },
+    "extends": [
+      "eslint:recommended",
+      "plugin:vue/vue3-recommended"
+    ],
+    "parserOptions": {
+      "ecmaVersion": 2021,
+      "parser": "@babel/eslint-parser",
+      "requireConfigFile": false
+    },
+    "rules": {
+      "no-console": "off",
+      "no-debugger": "off"
+    }
+  }
 }

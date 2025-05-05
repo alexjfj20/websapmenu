@@ -1,0 +1,31 @@
+services:
+  # Servicio web para la aplicación Vue.js
+  - type: web
+    name: websap
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_EXPIRES_IN
+        value: 24h
+      - key: SYNC_ENABLED
+        value: true
+      - key: SYNC_INTERVAL
+        value: 60000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: websap-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+
+databases:
+  # Base de datos PostgreSQL
+  - name: websap-db
+    plan: free
+    databaseName: websap
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: everywhere

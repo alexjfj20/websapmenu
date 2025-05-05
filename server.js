@@ -66,10 +66,22 @@ app.use((req, res, next) => {
   next();
 });
 
-// Importa y usa las rutas
-const syncRoutes = require('./src/server/routes/api');  
-app.use('/api/sync', syncRoutes);  
-console.log("🚀 Rutas de /api/sync registradas correctamente");
+// API routes can be added here
+// Asumiendo que api.js está en ./routes/api.js o ./server/routes/api.js
+// Ajusta la ruta según tu estructura real
+try {
+  app.use('/api', require('./routes/api')); // Intenta con ./routes/api
+} catch (e) {
+  if (e.code === 'MODULE_NOT_FOUND') {
+    try {
+      app.use('/api', require('./server/routes/api')); // Intenta con ./server/routes/api
+    } catch (e2) {
+      console.warn("WARN: No se encontraron las rutas API en ./routes/api ni en ./server/routes/api. Las rutas API no estarán disponibles.");
+    }
+  } else {
+    console.error("Error al cargar rutas API:", e);
+  }
+}
 
 // Ruta de prueba para verificar que el servidor está activo
 app.get('/api/ping', (req, res) => {

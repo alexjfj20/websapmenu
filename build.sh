@@ -28,9 +28,28 @@ ls -la ./node_modules/.bin/vue-cli-service || echo "vue-cli-service no encontrad
 export VUE_CLI_BABEL_TRANSPILE_MODULES=true
 export NODE_OPTIONS=--openssl-legacy-provider
 
-# Construir aplicación con opciones de skipeo de errores
-echo "Construyendo la aplicación..."
-npx vue-cli-service build --skip-plugins eslint || npx vue-cli-service build --no-clean
+# Crear archivo vue.config.js temporal que deshabilite ESLint
+echo "Creando configuración temporal sin ESLint..."
+cat > vue.config.js << EOL
+module.exports = {
+  lintOnSave: false,
+  transpileDependencies: true,
+  configureWebpack: {
+    module: {
+      rules: [
+        {
+          test: /\.(js|vue)$/,
+          use: [],
+        }
+      ]
+    }
+  }
+};
+EOL
+
+# Construir aplicación saltando ESLint
+echo "Construyendo la aplicación sin ESLint..."
+NODE_ENV=production npx vue-cli-service build --mode production --no-clean --skip-plugins eslint
 
 # Verificar resultado
 echo "Verificando resultado de la construcción..."

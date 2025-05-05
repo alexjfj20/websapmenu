@@ -35,9 +35,46 @@
     "eslint": "^7.32.0",
     "eslint-plugin-vue": "^8.0.3",
     "@babel/eslint-parser": "^7.12.16",
-    "@vue/cli-plugin-eslint": "^5.0.8"
+    "@vue/cli-plugin-eslint": "5.0.8"
   },
   "engines": {
     "node": "18.x"
+  },
+  "eslintConfig": {
+    "root": true,
+    "env": {
+      "node": true,
+      "vue/setup-compiler-macros": true
+    },
+    "extends": [
+      "eslint:recommended",
+      "plugin:vue/vue3-recommended"
+    ],
+    "parserOptions": {
+      "parser": "@babel/eslint-parser",
+      "requireConfigFile": false,
+      "ecmaVersion": 2021
+    },
+    "rules": {
+      /* ... */
+    }
+  },
+  "transpileDependencies": true,
+  "lintOnSave": false,
+  "chainWebpack": {
+    "config": {
+      "plugins": {
+        "delete": [
+          "eslint"
+        ]
+      },
+      "module": {
+        "rules": {
+          "delete": [
+            "eslint"
+          ]
+        }
+      }
+    }
   }
 }

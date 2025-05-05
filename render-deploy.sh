@@ -16,7 +16,7 @@ npm install express dotenv cors webpack-cli
 
 # Asegurarse de que los archivos del servidor estén disponibles
 echo "===== Copiando archivos del servidor ====="
-cp -f server.js api-mocks.js server-fixes.js api-interceptor.js inject-interceptor.js modify-index-html.js ./dist/ 2>/dev/null || :
+cp -f server.js api-mocks.js server-fixes.js api-interceptor.js inject-interceptor.js modify-index-html.js patch-compiled-js.js create-menu-page.js ./dist/ 2>/dev/null || :
 echo "✅ Archivos del servidor copiados"
 
 # Crear directorio dist si no existe
@@ -84,5 +84,13 @@ node inject-interceptor.js || echo "⚠️ Error al inyectar interceptor. Contin
 # Modificar index.html para agregar código de redirección
 echo "===== Modificando index.html para menús compartidos ====="
 node modify-index-html.js || echo "⚠️ Error al modificar index.html. Continuando..."
+
+# Parchear los archivos JS compilados
+echo "===== Parcheando archivos JS compilados ====="
+node patch-compiled-js.js || echo "⚠️ Error al parchear archivos JS. Continuando..."
+
+# Crear página HTML específica para menú compartido
+echo "===== Creando página HTML específica para menú compartido ====="
+node create-menu-page.js || echo "⚠️ Error al crear página de menú. Continuando..."
 
 echo "===== Despliegue completado ====="

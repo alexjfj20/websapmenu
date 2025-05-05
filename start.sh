@@ -21,4 +21,16 @@ echo "===== Instalando dependencias necesarias ====="
 npm install express dotenv cors
 
 echo "===== Iniciando servidor ====="
-node server.js
+
+# Asegurarse de que se crea la página específica de menú en caso de que no se haya creado
+if [ ! -d "dist/menu/8idq9bgbdwr7srcw" ]; then
+  echo "Creando página específica para menú compartido..."
+  node create-menu-page.js || echo "⚠️ Error al crear página de menú, continuando..."
+fi
+
+# Iniciar el servidor con reinicio automático en caso de error
+node server.js || {
+  echo "❌ Error en el servidor. Reiniciando en 5 segundos..."
+  sleep 5
+  node server.js
+}

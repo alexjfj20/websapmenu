@@ -100,6 +100,8 @@ app.get('/api/shared-menu/:shareId', (req, res) => {
 
 // API endpoint para menú compartido (URL común en la aplicación)
 app.get('/menu/:shareId', (req, res) => {
+  const shareId = req.params.shareId;
+  
   // Detectar si es una solicitud de API (Accept: application/json) o de página
   const acceptHeader = req.get('Accept') || '';
   const userAgent = req.get('User-Agent') || '';
@@ -110,13 +112,67 @@ app.get('/menu/:shareId', (req, res) => {
   
   if (isApiRequest) {
     // Si es una solicitud de API, devolver datos JSON
-    console.log(`Solicitud de API para menú compartido con ID: ${req.params.shareId}`);
-    const menuData = menuMock.generateMenu(req.params.shareId);
+    console.log(`Solicitud de API para menú compartido con ID: ${shareId}`);
+    const menuData = menuMock.generateMenu(shareId);
     res.json(menuData);
   } else {
-    // Si es una solicitud de página, enviar el HTML
-    console.log(`Solicitud de página de menú compartido con ID: ${req.params.shareId}`);
-    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+    // Si es una solicitud de página, intentar servir la página específica del menú
+    console.log(`Solicitud de página de menú compartido con ID: ${shareId}`);
+    
+    // Comprobar si existe una página específica para este menú
+    const specificMenuPath = path.join(__dirname, 'dist', 'menu', shareId, 'index.html');
+    
+    if (fs.existsSync(specificMenuPath)) {
+      console.log('✅ Sirviendo página específica del menú');
+      res.sendFile(specificMenuPath);
+    } else {
+      // Si no existe, enviar datos JSON precargados en una página genérica
+      console.log('⚠️ No se encontró página específica, usando fallback');
+      const menuData = menuMock.generateMenu(shareId);
+      
+      res.send(`
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Menú - ${menuData.businessInfo.name}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 0; padding: 20px; max-width: 800px; margin: 0 auto; }
+          .header { text-align: center; margin-bottom: 20px; }
+          .category { margin-bottom: 20px; border-bottom: 1px solid #eee; }
+          .item { margin-bottom: 10px; }
+          .maintenance { background: #f8d7da; color: #721c24; padding: 10px; text-align: center; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>${menuData.businessInfo.name || 'Menú'}</h1>
+          <p>${menuData.businessInfo.description || ''}</p>
+        </div>
+        <div class="maintenance">
+          <p>Esta página está en modo de mantenimiento</p>
+        </div>
+        <div id="menu-content">
+          ${menuData.categories.map(cat => `
+            <div class="category">
+              <h2>${cat.name}</h2>
+              ${cat.platos.map(item => `
+                <div class="item">
+                  <strong>${item.name}</strong> - $${item.price}
+                  <p>${item.description || ''}</p>
+                </div>
+              `).join('')}
+            </div>
+          `).join('')}
+        </div>
+        <script>
+          window.menuData = ${JSON.stringify(menuData)};
+        </script>
+      </body>
+      </html>
+      `);
+    }
   }
 });
 

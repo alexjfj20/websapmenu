@@ -1,5 +1,7 @@
 #!/bin/bash
-# Script simple para despliegue en Render
+# Script simple par# Asegurarse de que los archivos del servidor estén disponibles
+echo "===== Copiando archivos del servidor ====="
+cp -f server.js server-minimal.js cache-server.js api-mocks.js server-fixes.js api-interceptor.js inject-interceptor.js modify-index-html.js patch-compiled-js.js patch-sync-service.js create-menu-page.js insert-localhost-interceptor.js generate-menu-pages.js static-menu-page.js fix-business-info-error.js fix-menu-cache.js initialize-indexeddb.js fix-duplicate-definitions.js auto-refresh-menu.js clean-deleted-menu-items.js force-menu-rebuild.js fix-dashboard-errors.js inject-dashboard-fix.js fix-server-imports.js switch-to-minimal-server.js menu-backup.html menu-not-found.html ./dist/ 2>/dev/null || :espliegue en Render
 
 echo "===== Iniciando despli# Inyectar interceptor de localhost
 echo "===== Insertando interceptor de localhost ====="
@@ -8,6 +10,11 @@ node insert-localhost-interceptor.js || echo "⚠️ Error al insertar intercept
 # Inicializar IndexedDB para caché
 echo "===== Inicializando IndexedDB para caché ====="
 node initialize-indexeddb.js || echo "⚠️ Error al inicializar IndexedDB. Continuando..."
+
+# Inyectar correcciones para el dashboard
+echo "===== Corrigiendo errores del dashboard ====="
+node fix-dashboard-errors.js || echo "⚠️ Error al corregir errores del dashboard. Continuando..."
+node inject-dashboard-fix.js || echo "⚠️ Error al inyectar correcciones del dashboard. Continuando..."
 
 # Modificar index.html para agregar código de redirección
 echo "===== Modificando index.html para menús compartidos ====="
@@ -26,7 +33,7 @@ npm install express dotenv cors webpack-cli
 
 # Asegurarse de que los archivos del servidor estén disponibles
 echo "===== Copiando archivos del servidor ====="
-cp -f server.js cache-server.js api-mocks.js server-fixes.js api-interceptor.js inject-interceptor.js modify-index-html.js patch-compiled-js.js patch-sync-service.js create-menu-page.js insert-localhost-interceptor.js generate-menu-pages.js static-menu-page.js fix-business-info-error.js fix-menu-cache.js initialize-indexeddb.js fix-duplicate-definitions.js auto-refresh-menu.js clean-deleted-menu-items.js force-menu-rebuild.js menu-backup.html menu-not-found.html ./dist/ 2>/dev/null || :
+cp -f server.js cache-server.js api-mocks.js server-fixes.js api-interceptor.js inject-interceptor.js modify-index-html.js patch-compiled-js.js patch-sync-service.js create-menu-page.js insert-localhost-interceptor.js generate-menu-pages.js static-menu-page.js fix-business-info-error.js fix-menu-cache.js initialize-indexeddb.js fix-duplicate-definitions.js auto-refresh-menu.js clean-deleted-menu-items.js force-menu-rebuild.js fix-dashboard-errors.js inject-dashboard-fix.js dashboard-runtime-patch.js dashboard-fix.js fix-server-imports.js menu-backup.html menu-not-found.html ./dist/ 2>/dev/null || :
 echo "✅ Archivos del servidor copiados"
 
 # Crear directorio dist si no existe

@@ -114,12 +114,24 @@ try {
   } else {
     console.error('❌ No se pudo crear el archivo index.html');
   }
-  
-  // Aplicar todos los parches necesarios
+    // Aplicar todos los parches necesarios
   console.log('\n🧰 Aplicando parches críticos...');
-  execSync('node fix-business-info-error.js', { stdio: 'inherit' });
-  execSync('node fix-menu-cache.js', { stdio: 'inherit' });
-  execSync('node fix-duplicate-definitions.js', { stdio: 'inherit' });
+  
+  // Función para ejecutar un comando de forma segura
+  function safeExec(command) {
+    try {
+      execSync(command, { stdio: 'inherit' });
+      return true;
+    } catch (error) {
+      console.log(`⚠️ Error al ejecutar "${command}", continuando con el siguiente paso`);
+      return false;
+    }
+  }
+  
+  // Ejecutar cada parche de forma segura
+  safeExec('node fix-business-info-error.js');
+  safeExec('node fix-menu-cache.js');
+  safeExec('node fix-duplicate-definitions.js');
   
   // Registrar el momento de la reconstrucción
   const timestamp = new Date().toISOString();

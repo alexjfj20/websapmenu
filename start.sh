@@ -20,6 +20,10 @@ fi
 echo "===== Instalando dependencias necesarias ====="
 npm install express dotenv cors
 
+echo "===== Corrigiendo problemas críticos de importación ====="
+# Ejecutar primero esta corrección para evitar errores en el servidor
+node fix-server-imports.js || echo "⚠️ Error al corregir importaciones, continuando..."
+
 echo "===== Iniciando servidor ====="
 
 # Forzar una reconstrucción completa del menú desde cero
@@ -63,12 +67,28 @@ node fix-duplicate-definitions.js || echo "⚠️ Error al eliminar definiciones
 echo "===== Inicializando IndexedDB para caché ====="
 node initialize-indexeddb.js || echo "⚠️ Error al inicializar IndexedDB, continuando..."
 
+# Corregir errores específicos del dashboard
+echo "===== Corrigiendo errores del dashboard ====="
+node fix-dashboard-errors.js || echo "⚠️ Error al corregir errores del dashboard, continuando..."
+
 # Asegurarse de que el directorio para el archivo de activación de regeneración existe
 mkdir -p dist
 
 # Iniciar el servidor con reinicio automático en caso de error
 node server.js || {
-  echo "❌ Error en el servidor. Reiniciando en 5 segundos..."
-  sleep 5
-  node server.js
+  echo "❌ Error en el servidor. Intentando solución de emergencia..."
+  
+  # Si existe el script de cambio a servidor minimal, ejecutarlo
+  if [ -f "switch-to-minimal-server.js" ]; then
+    echo "🚨 ACTIVANDO SERVIDOR DE EMERGENCIA 🚨"
+    node switch-to-minimal-server.js
+    
+    echo "⏳ Iniciando servidor minimal en 3 segundos..."
+    sleep 3
+    node server.js
+  else
+    echo "⏳ Reiniciando servidor original en 5 segundos..."
+    sleep 5
+    node server.js
+  fi
 }

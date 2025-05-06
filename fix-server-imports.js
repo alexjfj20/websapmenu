@@ -113,6 +113,120 @@ module.exports = {
   fs.writeFileSync(fixesPath, basicFixes, 'utf8');
   console.log('✅ Creado archivo server-fixes.js garantizado');
   
+  // Crear versión optimizada para Render
+  const serverRenderPath = path.join(__dirname, 'server-render.js');
+  if (!fs.existsSync(serverRenderPath)) {
+    console.log('⚠️ Creando versión del servidor optimizada para Render');
+    
+    const renderServer = `/**
+ * Servidor optimizado para Render con puerto explícito
+ * Versión mejorada para evitar problemas de "no open ports detected"
+ */
+const express = require('express');
+const path = require('path');
+const fs = require('fs');
+const cors = require('cors');
+require('dotenv').config();
+
+// Crear aplicación Express
+const app = express();
+const port = process.env.PORT || 3000;
+
+console.log('🔧 Iniciando servidor con puerto explícito para Render');
+console.log(\`🔌 Puerto configurado: \${port}\`);
+
+// Habilitar CORS para todas las rutas
+app.use(cors());
+console.log('✅ CORS habilitado');
+
+// Middleware básico para procesar solicitudes de menú compartido
+app.use((req, res, next) => {
+  if (req.path && req.path.includes('/menu/')) {
+    console.log('🔄 Procesando solicitud de menú compartido:', req.path);
+  }
+  next();
+});
+
+// Middleware para procesar datos JSON
+app.use(express.json());
+
+// Servir archivos estáticos
+app.use(express.static(path.join(__dirname, 'dist')));
+console.log(\`📂 Sirviendo archivos estáticos desde: \${path.join(__dirname, 'dist')}\`);
+
+// Ruta para health check
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
+// Ruta para el status del servidor
+app.get('/api/status', (req, res) => {
+  res.json({ 
+    status: 'online', 
+    version: '1.0.0', 
+    timestamp: new Date().toISOString(),
+    port: port,
+    environment: process.env.RENDER ? 'render' : 'local'
+  });
+});
+
+// Ruta para el menú compartido
+app.get('/menu/:shareId', (req, res) => {
+  console.log(\`📱 Solicitud de menú compartido: \${req.params.shareId}\`);
+  
+  // Verificar si existe una página específica para este menú
+  const menuPath = path.join(__dirname, 'dist', 'menu', req.params.shareId, 'index.html');
+  
+  if (fs.existsSync(menuPath)) {
+    console.log('✅ Sirviendo página específica del menú');
+    res.sendFile(menuPath);
+  } else {
+    console.log('⚠️ Redirigiendo a página genérica');
+    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  }
+});
+
+// Captura todas las demás rutas y sirve la aplicación SPA
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
+
+// Iniciar el servidor con direcciones explícitamente vinculadas
+const server = app.listen(port, '0.0.0.0', () => {
+  console.log(\`
+  =================================================
+  🚀 Servidor activo en el puerto \${port}
+  =================================================
+  \`);
+  
+  // Información explícita sobre el puerto usado
+  const address = server.address();
+  console.log(\`📡 Servidor escuchando en: \${address.address}:\${address.port}\`);
+  console.log(\`🔌 Dirección: \${typeof address === 'string' ? address : \`\${address.address}:\${address.port}\`}\`);
+});
+
+// Manejar errores de inicio del servidor
+server.on('error', (error) => {
+  console.error('❌ Error al iniciar el servidor:', error);
+  if (error.code === 'EADDRINUSE') {
+    console.error(\`⚠️ El puerto \${port} está en uso. Intente con otro puerto.\`);
+  }
+});`;
+    
+    fs.writeFileSync(serverRenderPath, renderServer, 'utf8');
+    console.log('✅ Creado servidor optimizado para Render');
+    
+    // Reemplazar el servidor principal inmediatamente
+    const serverOriginPath = path.join(__dirname, 'server.js');
+    if (fs.existsSync(serverOriginPath)) {
+      const backupPath = path.join(__dirname, 'server-backup.js');
+      fs.copyFileSync(serverOriginPath, backupPath);
+      console.log('✅ Backup del servidor original creado');
+    }
+    fs.copyFileSync(serverRenderPath, serverOriginPath);
+    console.log('✅ Servidor optimizado para Render activado');
+  }
+  
   // También crear una versión minimalista de fix-business-info-error.js
   const businessFixPath = path.join(__dirname, 'fix-business-info-error.js');
   const minimalFix = `/**
@@ -173,12 +287,21 @@ const path = require('path');
 
 console.log('🚨 ACTIVANDO SERVIDOR DE EMERGENCIA 🚨');
 
+// Buscar el mejor servidor disponible para Render
+const serverRenderPath = path.join(__dirname, 'server-render.js');
 const serverMinimalPath = path.join(__dirname, 'server-minimal.js');
 const serverOriginPath = path.join(__dirname, 'server.js');
 
-// Verificar si existe el servidor minimal
-if (!fs.existsSync(serverMinimalPath)) {
-  console.error('❌ No se encontró el servidor minimal (server-minimal.js)');
+// Verificar qué versión del servidor está disponible
+let sourceServerPath = null;
+if (fs.existsSync(serverRenderPath)) {
+  console.log('✅ Encontrado servidor optimizado para Render');
+  sourceServerPath = serverRenderPath;
+} else if (fs.existsSync(serverMinimalPath)) {
+  console.log('✅ Encontrado servidor minimalista');
+  sourceServerPath = serverMinimalPath;
+} else {
+  console.error('❌ No se encontró ningún servidor alternativo');
   process.exit(1);
 }
 
@@ -189,9 +312,9 @@ if (fs.existsSync(serverOriginPath)) {
   console.log('✅ Backup del servidor original creado');
 }
 
-// Copiar el servidor minimal al servidor principal
-fs.copyFileSync(serverMinimalPath, serverOriginPath);
-console.log('✅ Servidor minimal activado como servidor principal');
+// Copiar el servidor optimizado al servidor principal
+fs.copyFileSync(sourceServerPath, serverOriginPath);
+console.log(`✅ Servidor optimizado (${path.basename(sourceServerPath)}) activado como servidor principal`);
 console.log('🚀 El servidor puede iniciarse ahora sin errores');
 `;
 

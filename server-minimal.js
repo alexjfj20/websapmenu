@@ -61,11 +61,19 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
-// Iniciar el servidor
-app.listen(port, () => {
+// Iniciar el servidor - FORZAR PUERTO PARA RENDER
+const server = app.listen(port, '0.0.0.0', () => {
   console.log(`
   =================================================
   🚀 Servidor minimalista activo en el puerto ${port}
   =================================================
   `);
+  
+  // Información explícita sobre el puerto usado
+  const address = server.address();
+  console.log(`📡 Servidor escuchando en: ${address.address}:${address.port}`);
+  
+  // Registro para debug en Render
+  console.log(`🔌 Puerto explícitamente vinculado: ${port}`);
+  console.log(`🔧 Variables de entorno: PORT=${process.env.PORT}, RENDER=${process.env.RENDER}`);
 });

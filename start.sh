@@ -74,21 +74,41 @@ node fix-dashboard-errors.js || echo "⚠️ Error al corregir errores del dashb
 # Asegurarse de que el directorio para el archivo de activación de regeneración existe
 mkdir -p dist
 
-# Iniciar el servidor con reinicio automático en caso de error
-node server.js || {
-  echo "❌ Error en el servidor. Intentando solución de emergencia..."
-  
-  # Si existe el script de cambio a servidor minimal, ejecutarlo
-  if [ -f "switch-to-minimal-server.js" ]; then
-    echo "🚨 ACTIVANDO SERVIDOR DE EMERGENCIA 🚨"
-    node switch-to-minimal-server.js
-    
-    echo "⏳ Iniciando servidor minimal en 3 segundos..."
-    sleep 3
-    node server.js
+# Verificar si estamos en Render, y usar el servidor optimizado si es así
+if [ "$RENDER" = "true" ]; then
+  echo "===== USANDO SERVIDOR OPTIMIZADO PARA RENDER ====="
+  if [ -f "server-render.js" ]; then
+    echo "✅ Usando versión especial para Render"
+    node server-render.js || {
+      echo "❌ Error en el servidor optimizado. Usando minimalista..."
+      if [ -f "server-minimal.js" ]; then
+        node server-minimal.js
+      else
+        echo "❌ No se encontró servidor minimalista. Reintentando con el original..."
+        node server.js
+      fi
+    }
   else
-    echo "⏳ Reiniciando servidor original en 5 segundos..."
-    sleep 5
+    echo "⚠️ No se encontró server-render.js, usando server.js normal"
     node server.js
   fi
-}
+else
+  # Iniciar el servidor con reinicio automático en caso de error (entorno no-Render)
+  node server.js || {
+    echo "❌ Error en el servidor. Intentando solución de emergencia..."
+    
+    # Si existe el script de cambio a servidor minimal, ejecutarlo
+    if [ -f "switch-to-minimal-server.js" ]; then
+      echo "🚨 ACTIVANDO SERVIDOR DE EMERGENCIA 🚨"
+      node switch-to-minimal-server.js
+      
+      echo "⏳ Iniciando servidor minimal en 3 segundos..."
+      sleep 3
+      node server.js
+    else
+      echo "⏳ Reiniciando servidor original en 5 segundos..."
+      sleep 5
+      node server.js
+    fi
+  }
+fi

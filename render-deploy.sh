@@ -1,5 +1,7 @@
 #!/bin/bash
-# Script simple par# Asegurarse de que los archivos del servidor estén disponibles
+# Script simple par# # Asegurarse de que los archivos del servidor estén disponibles
+echo "===== Copiando archivos del servidor ====="
+cp -f server.js server-render.js server-minimal.js port-binder.js cache-server.js api-mocks.js server-fixes.js api-interceptor.js inject-interceptor.js modify-index-html.js patch-compiled-js.js patch-sync-service.js create-menu-page.js insert-localhost-interceptor.js generate-menu-pages.js static-menu-page.js fix-business-info-error.js fix-menu-cache.js initialize-indexeddb.js fix-duplicate-definitions.js auto-refresh-menu.js clean-deleted-menu-items.js force-menu-rebuild.js fix-dashboard-errors.js inject-dashboard-fix.js fix-server-imports.js switch-to-minimal-server.js menu-backup.html menu-not-found.html ./dist/ 2>/dev/null || :gurarse de que los archivos del servidor estén disponibles
 echo "===== Copiando archivos del servidor ====="
 cp -f server.js server-minimal.js cache-server.js api-mocks.js server-fixes.js api-interceptor.js inject-interceptor.js modify-index-html.js patch-compiled-js.js patch-sync-service.js create-menu-page.js insert-localhost-interceptor.js generate-menu-pages.js static-menu-page.js fix-business-info-error.js fix-menu-cache.js initialize-indexeddb.js fix-duplicate-definitions.js auto-refresh-menu.js clean-deleted-menu-items.js force-menu-rebuild.js fix-dashboard-errors.js inject-dashboard-fix.js fix-server-imports.js switch-to-minimal-server.js menu-backup.html menu-not-found.html ./dist/ 2>/dev/null || :espliegue en Render
 

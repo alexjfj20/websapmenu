@@ -74,23 +74,30 @@ node fix-dashboard-errors.js || echo "⚠️ Error al corregir errores del dashb
 # Asegurarse de que el directorio para el archivo de activación de regeneración existe
 mkdir -p dist
 
-# Verificar si estamos en Render, y usar el servidor optimizado si es así
+# Verificar si estamos en Render, y usar el vinculador de puerto
 if [ "$RENDER" = "true" ]; then
-  echo "===== USANDO SERVIDOR OPTIMIZADO PARA RENDER ====="
-  if [ -f "server-render.js" ]; then
-    echo "✅ Usando versión especial para Render"
-    node server-render.js || {
-      echo "❌ Error en el servidor optimizado. Usando minimalista..."
-      if [ -f "server-minimal.js" ]; then
-        node server-minimal.js
-      else
-        echo "❌ No se encontró servidor minimalista. Reintentando con el original..."
-        node server.js
-      fi
-    }
+  echo "===== EJECUTANDO VINCULADOR DE PUERTO PARA RENDER ====="
+  if [ -f "port-binder.js" ]; then
+    echo "✅ Iniciando vinculador de puerto explícito"
+    # Ejecutar port-binder.js con máxima prioridad
+    exec node port-binder.js
   else
-    echo "⚠️ No se encontró server-render.js, usando server.js normal"
-    node server.js
+    echo "⚠️ No se encontró el vinculador de puerto, intentando con servidor optimizado"
+    if [ -f "server-render.js" ]; then
+      echo "✅ Usando versión especial para Render"
+      node server-render.js || {
+        echo "❌ Error en el servidor optimizado. Usando minimalista..."
+        if [ -f "server-minimal.js" ]; then
+          node server-minimal.js
+        else
+          echo "❌ No se encontró servidor minimalista. Reintentando con el original..."
+          node server.js
+        fi
+      }
+    else
+      echo "⚠️ No se encontró server-render.js, usando server.js normal"
+      node server.js
+    fi
   fi
 else
   # Iniciar el servidor con reinicio automático en caso de error (entorno no-Render)

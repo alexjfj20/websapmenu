@@ -156,3 +156,20 @@ else
     fi
   }
 fi
+
+// server-render.js
+const express = require('express');
+const app = express();
+const port = process.env.PORT || 10000;
+
+app.get('/', (req, res) => {
+  res.send('Servidor WebSAP activo');
+});
+
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Servidor escuchando en http://0.0.0.0:${port}`);
+});
+
+"scripts": {
+  "start": "node server-render.js"
+}

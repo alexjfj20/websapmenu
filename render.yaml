@@ -21,6 +21,17 @@ services:
       - key: JWT_SECRET
         generateValue: true
 
+  - type: web
+    name: websap-menu
+    env: node
+    buildCommand: cp -f package-worker.json package.json && npm install
+    startCommand: node server-worker.js
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: RENDER
+        value: true
+
 databases:
   # Base de datos PostgreSQL
   - name: websap-db

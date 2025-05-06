@@ -1,7 +1,26 @@
 #!/bin/bash
-# Script simple par# # Asegurarse de que los archivos del servidor estén disponibles
+# Scri# Asegurarse de que los archivos del servidor estén disponibles
 echo "===== Copiando archivos del servidor ====="
-cp -f server.js server-render.js server-minimal.js port-binder.js cache-server.js api-mocks.js server-fixes.js api-interceptor.js inject-interceptor.js modify-index-html.js patch-compiled-js.js patch-sync-service.js create-menu-page.js insert-localhost-interceptor.js generate-menu-pages.js static-menu-page.js fix-business-info-error.js fix-menu-cache.js initialize-indexeddb.js fix-duplicate-definitions.js auto-refresh-menu.js clean-deleted-menu-items.js force-menu-rebuild.js fix-dashboard-errors.js inject-dashboard-fix.js fix-server-imports.js switch-to-minimal-server.js menu-backup.html menu-not-found.html ./dist/ 2>/dev/null || :gurarse de que los archivos del servidor estén disponibles
+cp -f server.js server-worker.js server-render.js server-minimal.js port-binder.js cache-server.js api-mocks.js server-fixes.js api-interceptor.js inject-interceptor.js modify-index-html.js patch-compiled-js.js patch-sync-service.js create-menu-page.js insert-localhost-interceptor.js generate-menu-pages.js static-menu-page.js fix-business-info-error.js fix-menu-cache.js initialize-indexeddb.js fix-duplicate-definitions.js auto-refresh-menu.js clean-deleted-menu-items.js force-menu-rebuild.js fix-dashboard-errors.js inject-dashboard-fix.js fix-server-imports.js switch-to-minimal-server.js menu-backup.html menu-not-found.html ./dist/ 2>/dev/null || :simple par# # Copiar archivos para Render
+cp -f Procfile render.yaml bun.lockb ./dist/ 2>/dev/null || :
+# Usar package-worker.json con máxima prioridad, luego package-render.json, finalmente el package.json normal
+if [ -f "package-worker.json" ]; then
+  echo "✅ Usando package-worker.json optimizado para Worker en Render"
+  cp -f package-worker.json ./dist/package.json 2>/dev/null || :
+elif [ -f "package-render.json" ]; then
+  echo "✅ Usando package-render.json específico para Render"
+  cp -f package-render.json ./dist/package.json 2>/dev/null || :
+else
+  cp -f package.json ./dist/ 2>/dev/null || :
+fi
+
+# Copiar scripts de inicio especiales
+cp -f start-render.sh ./dist/ 2>/dev/null || :
+chmod +x ./dist/start-render.sh 2>/dev/null || :
+
+# Asegurarse de que los archivos del servidor estén disponibles
+echo "===== Copiando archivos del servidor ====="
+cp -f server.js entrypoint.js server-render.js server-minimal.js port-binder.js cache-server.js api-mocks.js server-fixes.js api-interceptor.js inject-interceptor.js modify-index-html.js patch-compiled-js.js patch-sync-service.js create-menu-page.js insert-localhost-interceptor.js generate-menu-pages.js static-menu-page.js fix-business-info-error.js fix-menu-cache.js initialize-indexeddb.js fix-duplicate-definitions.js auto-refresh-menu.js clean-deleted-menu-items.js force-menu-rebuild.js fix-dashboard-errors.js inject-dashboard-fix.js fix-server-imports.js switch-to-minimal-server.js menu-backup.html menu-not-found.html ./dist/ 2>/dev/null || :gurarse de que los archivos del servidor estén disponibles
 echo "===== Copiando archivos del servidor ====="
 cp -f server.js server-minimal.js cache-server.js api-mocks.js server-fixes.js api-interceptor.js inject-interceptor.js modify-index-html.js patch-compiled-js.js patch-sync-service.js create-menu-page.js insert-localhost-interceptor.js generate-menu-pages.js static-menu-page.js fix-business-info-error.js fix-menu-cache.js initialize-indexeddb.js fix-duplicate-definitions.js auto-refresh-menu.js clean-deleted-menu-items.js force-menu-rebuild.js fix-dashboard-errors.js inject-dashboard-fix.js fix-server-imports.js switch-to-minimal-server.js menu-backup.html menu-not-found.html ./dist/ 2>/dev/null || :espliegue en Render
 

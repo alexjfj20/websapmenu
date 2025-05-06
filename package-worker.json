@@ -1,0 +1,16 @@
+{
+  "name": "websap-menu-worker",
+  "version": "1.0.0",
+  "description": "WebSAP Menu Worker Server for Render",
+  "type": "commonjs",
+  "main": "server-worker.js",
+  "scripts": {
+    "start": "node server-worker.js"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {
+    "http": "*"
+  }
+}

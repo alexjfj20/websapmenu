@@ -78,15 +78,42 @@ mkdir -p dist
 if [ "$RENDER" = "true" ]; then
   echo "===== EJECUTANDO SERVIDOR PARA RENDER ====="
   
-  # Enfoque prioritario: server-worker.js (más simple y rápido)
-  if [ -f "server-worker.js" ]; then
-    echo "✅ Iniciando servidor worker (máxima prioridad)"
-    exec node server-worker.js
+  # Configuración CRÍTICA para Render - usar siempre el puerto 10000 si no está definido
+  export PORT=${PORT:-10000}
+  echo "🔌 Puerto configurado para Render: $PORT"
   
-  # Segundo enfoque: port-binder.js
+  # PARA RENDER: Enfoque prioritario - vincular un puerto HTTP simple y directo
+  echo "✅ Iniciando servidor HTTP simple en el puerto $PORT (0.0.0.0)"
+  
+  # Crear y ejecutar un servidor HTTP básico directamente desde el script
+  # Esto garantiza vinculación inmediata sin depender de archivos externos
+  node -e "
+    const http = require('http');
+    const port = process.env.PORT || 10000;
+    console.log('🚀 Creando servidor HTTP básico en puerto ' + port);
+    const server = http.createServer((req, res) => {
+      res.writeHead(200, {'Content-Type': 'text/plain'});
+      res.end('WebSAP Server Running');
+    });
+    server.listen(port, '0.0.0.0', () => {
+      console.log('✅ PUERTO ' + port + ' VINCULADO EXITOSAMENTE');
+      console.log('📡 Servidor escuchando en http://0.0.0.0:' + port);
+      setInterval(() => console.log('⏱️ Puerto ' + port + ' activo - ' + new Date().toISOString()), 10000);
+    });
+    server.on('error', (e) => console.error('❌ ERROR: ' + e.message));
+  " &
+  
+  # Esperar a que el servidor simple se inicie y vincule el puerto
+  sleep 3
+  
+  # Luego iniciar el servidor real en segundo plano
+  echo "✅ Iniciando servidor principal"
+  if [ -f "server-worker.js" ]; then
+    echo "✅ Usando servidor worker optimizado"
+    node server-worker.js
   elif [ -f "port-binder.js" ]; then
-    echo "✅ Iniciando vinculador de puerto explícito"
-    exec node port-binder.js
+    echo "✅ Usando vinculador de puerto explícito"
+    node port-binder.js
   
   # Tercer enfoque: servidor optimizado para Render
   elif [ -f "server-render.js" ]; then

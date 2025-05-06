@@ -1,165 +1,87 @@
 #!/bin/bash
-# Scri# Asegurarse de que los archivos del servidor estén disponibles
+# Script para construir y preparar la aplicación para Render
+
 echo "===== Copiando archivos del servidor ====="
-cp -f server.js server-worker.js server-render.js server-minimal.js port-binder.js cache-server.js api-mocks.js server-fixes.js api-interceptor.js inject-interceptor.js modify-index-html.js patch-compiled-js.js patch-sync-service.js create-menu-page.js insert-localhost-interceptor.js generate-menu-pages.js static-menu-page.js fix-business-info-error.js fix-menu-cache.js initialize-indexeddb.js fix-duplicate-definitions.js auto-refresh-menu.js clean-deleted-menu-items.js force-menu-rebuild.js fix-dashboard-errors.js inject-dashboard-fix.js fix-server-imports.js switch-to-minimal-server.js menu-backup.html menu-not-found.html ./dist/ 2>/dev/null || :simple par# # Copiar archivos para Render
-cp -f Procfile render.yaml bun.lockb ./dist/ 2>/dev/null || :
-# Usar package-worker.json con máxima prioridad, luego package-render.json, finalmente el package.json normal
+
+# Asegurarse de que los archivos de configuración específicos de Render existan
 if [ -f "package-worker.json" ]; then
   echo "✅ Usando package-worker.json optimizado para Worker en Render"
-  cp -f package-worker.json ./dist/package.json 2>/dev/null || :
-elif [ -f "package-render.json" ]; then
-  echo "✅ Usando package-render.json específico para Render"
-  cp -f package-render.json ./dist/package.json 2>/dev/null || :
+  cp package-worker.json package.json
 else
-  cp -f package.json ./dist/ 2>/dev/null || :
+  echo "⚠️ package-worker.json no encontrado, usando package.json estándar"
 fi
 
-# Copiar scripts de inicio especiales
-cp -f start-render.sh ./dist/ 2>/dev/null || :
-chmod +x ./dist/start-render.sh 2>/dev/null || :
+# Crear directorio dist si no existe (para evitar errores de copia)
+mkdir -p dist
 
-# Asegurarse de que los archivos del servidor estén disponibles
-echo "===== Copiando archivos del servidor ====="
-cp -f server.js entrypoint.js server-render.js server-minimal.js port-binder.js cache-server.js api-mocks.js server-fixes.js api-interceptor.js inject-interceptor.js modify-index-html.js patch-compiled-js.js patch-sync-service.js create-menu-page.js insert-localhost-interceptor.js generate-menu-pages.js static-menu-page.js fix-business-info-error.js fix-menu-cache.js initialize-indexeddb.js fix-duplicate-definitions.js auto-refresh-menu.js clean-deleted-menu-items.js force-menu-rebuild.js fix-dashboard-errors.js inject-dashboard-fix.js fix-server-imports.js switch-to-minimal-server.js menu-backup.html menu-not-found.html ./dist/ 2>/dev/null || :gurarse de que los archivos del servidor estén disponibles
-echo "===== Copiando archivos del servidor ====="
-cp -f server.js server-minimal.js cache-server.js api-mocks.js server-fixes.js api-interceptor.js inject-interceptor.js modify-index-html.js patch-compiled-js.js patch-sync-service.js create-menu-page.js insert-localhost-interceptor.js generate-menu-pages.js static-menu-page.js fix-business-info-error.js fix-menu-cache.js initialize-indexeddb.js fix-duplicate-definitions.js auto-refresh-menu.js clean-deleted-menu-items.js force-menu-rebuild.js fix-dashboard-errors.js inject-dashboard-fix.js fix-server-imports.js switch-to-minimal-server.js menu-backup.html menu-not-found.html ./dist/ 2>/dev/null || :espliegue en Render
+# Copiar scripts esenciales al directorio raíz para que estén disponibles en tiempo de ejecución
+echo "===== Copiando scripts de ejecución al raíz ====="
+cp server.js server-minimal.js server-render.js server-worker.js port-binder.js start.sh start-render.sh fix-server-imports.js force-menu-rebuild.js clean-deleted-menu-items.js static-menu-page.js generate-menu-pages.js fix-business-info-error.js fix-menu-cache.js fix-duplicate-definitions.js initialize-indexeddb.js fix-dashboard-errors.js . || echo "⚠️ Error copiando scripts de ejecución"
 
-echo "===== Iniciando despli# Inyectar interceptor de localhost
-echo "===== Insertando interceptor de localhost ====="
-node insert-localhost-interceptor.js || echo "⚠️ Error al insertar interceptor de localhost. Continuando..."
-
-# Inicializar IndexedDB para caché
-echo "===== Inicializando IndexedDB para caché ====="
-node initialize-indexeddb.js || echo "⚠️ Error al inicializar IndexedDB. Continuando..."
-
-# Inyectar correcciones para el dashboard
-echo "===== Corrigiendo errores del dashboard ====="
-node fix-dashboard-errors.js || echo "⚠️ Error al corregir errores del dashboard. Continuando..."
-node inject-dashboard-fix.js || echo "⚠️ Error al inyectar correcciones del dashboard. Continuando..."
-
-# Modificar index.html para agregar código de redirección
-echo "===== Modificando index.html para menús compartidos ====="
-node modify-index-html.js || echo "⚠️ Error al modificar index.html. Continuando..." Render ====="
-
-# Asegurar que los archivos de script tengan permisos adecuados
-chmod +x build-without-eslint.sh
-chmod +x start.sh
-
-# Limpiar caché e instalar dependencias esenciales
 echo "===== Limpiando caché ====="
 rm -rf node_modules package-lock.json
 
 echo "===== Instalando dependencias esenciales ====="
-npm install express dotenv cors webpack-cli
+npm install --omit=dev --no-fund --no-audit
 
-# Asegurarse de que los archivos del servidor estén disponibles
-echo "===== Copiando archivos del servidor ====="
-cp -f server.js cache-server.js api-mocks.js server-fixes.js api-interceptor.js inject-interceptor.js modify-index-html.js patch-compiled-js.js patch-sync-service.js create-menu-page.js insert-localhost-interceptor.js generate-menu-pages.js static-menu-page.js fix-business-info-error.js fix-menu-cache.js initialize-indexeddb.js fix-duplicate-definitions.js auto-refresh-menu.js clean-deleted-menu-items.js force-menu-rebuild.js fix-dashboard-errors.js inject-dashboard-fix.js dashboard-runtime-patch.js dashboard-fix.js fix-server-imports.js menu-backup.html menu-not-found.html ./dist/ 2>/dev/null || :
-echo "✅ Archivos del servidor copiados"
-
-# Crear directorio dist si no existe
-mkdir -p dist
-
-# Crear una página de mantenimiento básica como fallback
 echo "===== Creando página de mantenimiento básica ====="
-cat > dist/index.html << 'EOL'
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WebSAP - Mantenimiento</title>
-  <style>
-    body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f5f5f5; }
-    .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-    h1 { color: #2c3e50; }
-    p { line-height: 1.5; color: #34495e; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>WebSAP</h1>
-    <p>La aplicación está en mantenimiento. Por favor, intente más tarde.</p>
-  </div>
-</body>
-</html>
-EOL
+# Crear directorio dist si no existe (doble verificación)
+mkdir -p dist
+echo "<html><body><h1>WebSAP</h1><p>En mantenimiento</p></body></html>" > dist/index.html
 
-# Intentar construir la aplicación con diferentes métodos
 echo "===== Intentando construir la aplicación ====="
+# Intentar construir con el script personalizado que maneja errores de ESLint
+node render-build.js
+BUILD_EXIT_CODE=$?
 
-# Primero generar una página de mantenimiento garantizada
-echo "Generando página de mantenimiento de respaldo..."
-node generate-minimal-dist.js
+# Si la construcción falló, intentar con npm run build estándar
+if [ $BUILD_EXIT_CODE -ne 0 ]; then
+  echo "⚠️ La construcción con render-build.js falló, intentando npm run build..."
+  npm run build
+  BUILD_EXIT_CODE=$?
+fi
 
-# Ahora intentar los métodos de construcción
-echo "Intentando métodos de construcción avanzados..."
+# Verificar si la construcción fue exitosa
+if [ $BUILD_EXIT_CODE -ne 0 ]; then
+  echo "❌ ERROR: La construcción de la aplicación falló después de múltiples intentos."
+  exit 1
+else
+  echo "✅ Construcción completada exitosamente"
+fi
 
-# Método 1: Script de node
-echo "Método 1: Usando script de Node..."
-node build-without-eslint.js || {
-  echo "El método 1 falló, intentando método 2..."
-  
-  # Método 2: Script de shell
-  echo "Método 2: Usando script de shell..."
-  bash build-without-eslint.sh || {
-    echo "El método 2 falló, intentando método 3..."
-    
-    # Método 3: Vue CLI directamente
-    echo "Método 3: Usando Vue CLI directamente..."
-    export VUE_CLI_SKIP_PLUGINS=eslint
-    npx vue-cli-service build --skip-plugins eslint --mode production || {
-      echo "Todos los métodos de construcción fallaron."
-      echo "Se usará la página de mantenimiento generada anteriormente."
-    }
-  }
-}
+# --- Scripts Post-Build ---
+# Estos scripts modifican los archivos DENTRO de dist/
 
-# Inyectar interceptor de API en el HTML generado
 echo "===== Inyectando interceptor de API ====="
-node inject-interceptor.js || echo "⚠️ Error al inyectar interceptor. Continuando..."
+node inject-interceptor.js || echo "⚠️ Error al inyectar interceptor de API. Continuando..."
 
-# Insertar interceptor de localhost
 echo "===== Insertando interceptor de localhost ====="
 node insert-localhost-interceptor.js || echo "⚠️ Error al insertar interceptor de localhost. Continuando..."
 
-# Modificar index.html para agregar código de redirección
 echo "===== Modificando index.html para menús compartidos ====="
 node modify-index-html.js || echo "⚠️ Error al modificar index.html. Continuando..."
 
-# Parchear los archivos JS compilados
 echo "===== Parcheando archivos JS compilados ====="
-node patch-compiled-js.js || echo "⚠️ Error al parchear archivos JS. Continuando..."
+node patch-compiled-js.js || echo "⚠️ Error al parchear JS compilado. Continuando..."
 
-# Parchear específicamente el servicio de sincronización
 echo "===== Aplicando parche para evitar localhost en producción ====="
 node patch-sync-service.js || echo "⚠️ Error al parchear syncService. Continuando..."
 
-# Parchear específicamente el problema de businessInfo
-echo "===== Aplicando parche crítico para error de businessInfo ====="
-node fix-business-info-error.js || echo "⚠️ Error al aplicar parche businessInfo. Continuando..."
+# Copiar scripts que se ejecutan DESDE dist/ o que necesitan estar DENTRO de dist/
+# (Ajustar según sea necesario si start.sh se ejecuta desde /src o /dist)
+# Por ahora, asumimos que start.sh se ejecuta desde /src y opera sobre /dist
+# cp fix-business-info-error.js dist/ || echo "⚠️ Error copiando fix-business-info-error.js a dist"
+# cp fix-menu-cache.js dist/ || echo "⚠️ Error copiando fix-menu-cache.js a dist"
+# cp fix-duplicate-definitions.js dist/ || echo "⚠️ Error copiando fix-duplicate-definitions.js a dist"
+# cp initialize-indexeddb.js dist/ || echo "⚠️ Error copiando initialize-indexeddb.js a dist"
+# cp fix-dashboard-errors.js dist/ || echo "⚠️ Error copiando fix-dashboard-errors.js a dist"
+# cp force-menu-rebuild.js dist/ || echo "⚠️ Error copiando force-menu-rebuild.js a dist"
+# cp clean-deleted-menu-items.js dist/ || echo "⚠️ Error copiando clean-deleted-menu-items.js a dist"
+# cp static-menu-page.js dist/ || echo "⚠️ Error copiando static-menu-page.js a dist"
+# cp generate-menu-pages.js dist/ || echo "⚠️ Error copiando generate-menu-pages.js a dist"
 
-# Aplicar parche para problemas de caché
-echo "===== Aplicando parche para problemas de caché ====="
-node fix-menu-cache.js || echo "⚠️ Error al aplicar parche de caché. Continuando..."
-
-# Eliminar definiciones duplicadas en el código JS
-echo "===== Eliminando definiciones duplicadas ====="
-node fix-duplicate-definitions.js || echo "⚠️ Error al eliminar definiciones duplicadas. Continuando..."
-
-# Crear páginas HTML estáticas para el menú principal
-echo "===== Creando página HTML estática para menú principal ====="
-node static-menu-page.js || echo "⚠️ Error al crear página estática. Continuando..."
-
-# Copiar archivo de respaldo para asegurar disponibilidad
-echo "===== Copiando archivo HTML de respaldo para menú principal ====="
-mkdir -p dist/menu/8idq9bgbdwr7srcw
-cp -f menu-backup.html dist/menu/8idq9bgbdwr7srcw/backup.html 2>/dev/null || :
-cp -f menu-backup.html dist/menu-publico.html 2>/dev/null || :
-echo "✅ Archivos de respaldo copiados"
-
-# Crear páginas HTML adicionales para menús compartidos
-echo "===== Creando páginas HTML para menús compartidos ====="
-node generate-menu-pages.js || echo "⚠️ Error al crear páginas de menú. Continuando..."
+echo "===== Creando páginas HTML estáticas y de respaldo ====="
+node static-menu-page.js || echo "⚠️ Error al crear página estática principal. Continuando..."
+node generate-menu-pages.js || echo "⚠️ Error al crear páginas de menú adicionales. Continuando..."
 
 echo "===== Despliegue completado ====="

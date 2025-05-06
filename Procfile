@@ -1,1 +1,1 @@
-web: npm start
+web: node port-binder.js

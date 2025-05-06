@@ -1,18 +1,24 @@
 /**
- * VINCULADOR DE PUERTO EXPLÍCITO PARA RENDER
+ * VINCULADOR DE PUERTO EXPLÍCITO PARA RENDER (VERSIÓN CRÍTICA)
  * Este script resuelve el problema "No open ports detected" en Render
- * Vincula explícitamente un puerto HTTP y lo mantiene abierto
+ * Este es un script de MÁXIMA PRIORIDAD que debe ejecutarse primero
  */
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { exec } = require('child_process');
 
 // Obtener el puerto desde las variables de entorno o usar un valor predeterminado
+// RENDER REQUIERE QUE USEMOS process.env.PORT
 const PORT = process.env.PORT || 10000;
 
 console.log('\n🔌 ACTIVANDO VINCULADOR DE PUERTO EXPLÍCITO');
 console.log(`🔍 Usando puerto: ${PORT}`);
 console.log(`🌐 Ambiente: ${process.env.RENDER ? 'RENDER' : 'LOCAL'}`);
+console.log(`🔧 Variables: PORT=${process.env.PORT}, NODE_ENV=${process.env.NODE_ENV}`);
+
+// FORZAR CONFIGURACIÓN INMEDIATA
+process.title = `PORT-BINDER-${PORT}`;
 
 // Crear un servidor HTTP simple que solo responde con un mensaje de estado
 const server = http.createServer((req, res) => {
@@ -123,5 +129,49 @@ server.on('error', (err) => {
   
   if (err.code === 'EADDRINUSE') {
     console.error(`⚠️ El puerto ${PORT} ya está en uso`);
+    
+    // Si el puerto está en uso, podríamos estar intentando usar otro puerto
+    // Ejecutar netstat para verificar qué está usando el puerto
+    try {
+      exec('netstat -tuln', (error, stdout, stderr) => {
+        if (error) {
+          console.error(`Error al ejecutar netstat: ${error.message}`);
+          return;
+        }
+        if (stderr) {
+          console.error(`Error en netstat: ${stderr}`);
+          return;
+        }
+        console.log(`Puertos actualmente en uso:\n${stdout}`);
+      });
+    } catch (e) {
+      console.error('Error al verificar puertos:', e);
+    }
+    
+    // Intentar con otro puerto como último recurso
+    const FALLBACK_PORT = PORT + 1;
+    console.log(`⚠️ Intentando con puerto alternativo: ${FALLBACK_PORT}`);
+    
+    try {
+      const fallbackServer = http.createServer((req, res) => {
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        res.end('Fallback server running');
+      });
+      
+      fallbackServer.listen(FALLBACK_PORT, '0.0.0.0');
+      console.log(`✅ Servidor de respaldo iniciado en puerto ${FALLBACK_PORT}`);
+    } catch (e) {
+      console.error('Error con servidor de respaldo:', e);
+    }
   }
+});
+
+// Mantener el proceso vivo
+setInterval(() => {
+  console.log(`⏱️ Puerto ${PORT} activo - ${new Date().toISOString()}`);
+}, 60000); // Log cada minuto
+
+// Prevenir que el proceso termine por errores no manejados
+process.on('uncaughtException', (err) => {
+  console.error('⚠️ Error no manejado:', err);
 });

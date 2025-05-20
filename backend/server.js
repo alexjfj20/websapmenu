@@ -7,9 +7,9 @@ const { sequelize, closeConnection } = require('./config/database');
 // Cargar variables de entorno
 dotenv.config();
 
-// Añadir log para verificar directorio public
-console.log('Directorio public en server.js:', path.join(__dirname, 'public'));
-console.log('Verificando existencia del archivo index.html:', require('fs').existsSync(path.join(__dirname, 'public', 'index.html')) ? 'EXISTE' : 'NO EXISTE');
+// Añadir log para verificar directorio dist
+console.log('Directorio dist en server.js:', path.join(__dirname, '..', 'dist'));
+console.log('Verificando existencia del archivo index.html:', require('fs').existsSync(path.join(__dirname, '..', 'dist', 'index.html')) ? 'EXISTE' : 'NO EXISTE');
 
 // Crear la aplicación Express
 const app = express();
@@ -82,6 +82,17 @@ app.get('/api/ping', (req, res) => {
   res.status(200).json({ message: 'pong', timestamp: new Date().toISOString() });
 });
 
+// Healthcheck API general
+app.get('/api/healthcheck', (req, res) => {
+  console.log('Verificando estado general de la API');
+  res.status(200).json({ 
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    message: 'API funcionando correctamente',
+    version: '1.0.0'
+  });
+});
+
 // Endpoint para listar rutas
 app.get('/api/routes', (req, res) => {
   const routes = [];
@@ -104,17 +115,17 @@ app.get('/api/routes', (req, res) => {
   res.json(routes);
 });
 
-// Endpoint para verificar el contenido del directorio public
-app.get('/api/check-public', (req, res) => {
+// Endpoint para verificar el contenido del directorio dist
+app.get('/api/check-dist', (req, res) => {
   const fs = require('fs');
   try {
-    const publicDir = path.join(__dirname, 'public');
-    const exists = fs.existsSync(publicDir);
+    const distDir = path.join(__dirname, '..', 'dist');
+    const exists = fs.existsSync(distDir);
     let files = [];
     
     if (exists) {
-      files = fs.readdirSync(publicDir).map(file => {
-        const stats = fs.statSync(path.join(publicDir, file));
+      files = fs.readdirSync(distDir).map(file => {
+        const stats = fs.statSync(path.join(distDir, file));
         return {
           name: file,
           isDirectory: stats.isDirectory(),
@@ -125,8 +136,8 @@ app.get('/api/check-public', (req, res) => {
     }
     
     res.json({
-      publicDirExists: exists,
-      publicPath: publicDir,
+      distDirExists: exists,
+      distPath: distDir,
       files: files
     });
   } catch (error) {
@@ -188,13 +199,13 @@ app.use('/api', (err, req, res, next) => {
   });
 });
 
-// Servir archivos estáticos desde la carpeta public
-app.use(express.static(path.join(__dirname, 'public')));
+// Servir archivos estáticos desde la carpeta dist
+app.use(express.static(path.join(__dirname, '..', 'dist')));
 
 // Ruta fallback para SPA (Vue.js)
 app.get('*', (req, res) => {
   console.log('Sirviendo index.html para:', req.url);
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
 });
 
 // Middleware global para manejar errores

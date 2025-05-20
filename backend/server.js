@@ -7,26 +7,28 @@ const { sequelize, closeConnection } = require('./config/database');
 // Cargar variables de entorno
 dotenv.config();
 
+// Añadir log para verificar directorio public
+console.log('Directorio public en server.js:', path.join(__dirname, 'public'));
+
 // Crear la aplicación Express
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Configuración CORS adecuada
 app.use(cors({
-  origin: '*', // Permitir todas las solicitudes para solucionar el problema
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
-  credentials: true // Permitir cookies
+  credentials: true
 }));
 
-// Middleware adicional para CORS (asegurarse de que las cabeceras se envíen correctamente)
+// Middleware adicional para CORS
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   res.header('Access-Control-Allow-Credentials', 'true');
   
-  // Manejar solicitudes OPTIONS (preflight)
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -38,29 +40,18 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Servir archivos estáticos desde la carpeta public
-app.use(express.static(path.join(__dirname, 'public')));
-
 // Middleware para debug de solicitudes
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.url}`);
   next();
 });
 
-// Middleware para cerrar conexiones después de cada solicitud
+// Middleware para cerrar conexiones
 app.use((req, res, next) => {
-  // Guardar la función original end
   const originalEnd = res.end;
-  
-  // Sobrescribir la función end
   res.end = function(...args) {
-    // No cerrar conexiones después de cada solicitud, ya que esto causa problemas
-    // con el pool de conexiones. En su lugar, la limpieza se hará periódicamente.
-    
-    // Llamar a la función original end
     return originalEnd.apply(this, args);
   };
-  
   next();
 });
 
@@ -69,28 +60,32 @@ const syncRoutes = require('./routes/syncRoutes');
 const authRoutes = require('./routes/authRoutes');
 const directDeleteRoutes = require('./routes/directDeleteRoutes');
 const userRoutes = require('./routes/userRoutes');
-const adminRoutes = require('./routes/adminRoutes'); // Rutas de administración
-const platosRoutes = require('./routes/platosRoutes'); // Rutas de platos
-const platoRoutes = require('./routes/platoRoutes'); // Rutas de plato individual
-const indexedDBRoutes = require('./routes/indexedDBRoutes'); // Rutas para IndexedDB
-const whatsappRoutes = require('./routes/whatsappRoutes'); // Rutas para WhatsApp
-const restauranteRoutes = require('./routes/restauranteRoutes'); // Rutas para restaurantes
+const adminRoutes = require('./routes/adminRoutes');
+const platosRoutes = require('./routes/platosRoutes');
+const platoRoutes = require('./routes/platoRoutes');
+const indexedDBRoutes = require('./routes/indexedDBRoutes');
+const whatsappRoutes = require('./routes/whatsappRoutes');
+const restauranteRoutes = require('./routes/restauranteRoutes');
 
-// Registrar las rutas
+// Registrar las rutas API
 app.use('/api/sync', syncRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/admin', adminRoutes); // IMPORTANTE: Rutas de administración correctamente montadas en /api/admin
+app.use('/api/admin', adminRoutes);
 app.use('/api/platos', platosRoutes);
 app.use('/api/plato', platoRoutes);
 app.use('/api/indexeddb', indexedDBRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
 app.use('/api/restaurantes', restauranteRoutes);
-app.use('/', directDeleteRoutes);
+app.use('/api', directDeleteRoutes); // Cambié esto para que no interfiera con las rutas de frontend
 
-// Ruta principal que devuelve JSON válido en lugar de texto plano
-app.get('/', (req, res) => {
-  res.json({ message: 'It works!' }); // IMPORTANTE: Devolver JSON válido, no texto
+// Endpoint para verificar estado de API
+app.get('/api/status', (req, res) => {
+  res.json({ 
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
 });
 
 // Ruta de prueba simple
@@ -98,21 +93,13 @@ app.get('/api/ping', (req, res) => {
   res.status(200).json({ message: 'pong', timestamp: new Date().toISOString() });
 });
 
-// Ruta de prueba para test
-app.get('/api/test/ping', (req, res) => {
-  res.status(200).json({ 
-    message: 'pong',
-    timestamp: new Date().toISOString() 
-  });
-});
-
-// Añadido: Endpoint para listar todas las rutas registradas (ayuda a depurar)
+// Endpoint para listar rutas
 app.get('/api/routes', (req, res) => {
   const routes = [];
   app._router.stack.forEach(middleware => {
-    if(middleware.route) { // rutas directas
+    if(middleware.route) {
       routes.push(middleware.route.path);
-    } else if(middleware.name === 'router') { // rutas de router
+    } else if(middleware.name === 'router') {
       middleware.handle.stack.forEach(handler => {
         const route = handler.route;
         if (route) {
@@ -131,10 +118,7 @@ app.get('/api/routes', (req, res) => {
 // Endpoint para verificar BD
 app.get('/api/test/db', async (req, res) => {
   try {
-    // Verificar conexión
     await sequelize.authenticate();
-    
-    // Obtener lista de tablas
     const [tables] = await sequelize.query(`
       SELECT table_name 
       FROM information_schema.tables 
@@ -170,27 +154,25 @@ app.use((err, req, res, next) => {
   });
 });
 
+// IMPORTANTE: Servir archivos estáticos ANTES del fallback
+// Servir archivos estáticos desde la carpeta public
+app.use(express.static(path.join(__dirname, 'public')));
+
+// IMPORTANTE: Esta ruta debe ir DESPUÉS de todas las rutas API
 // Ruta fallback para SPA (Vue.js)
-app.get('*', (req, res) => {
-  if (req.accepts('html')) {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-  } else {
-    res.status(404).json({ message: 'Not Found' });
-  }
+app.get(/^(?!\/api).*/, (req, res) => {
+  console.log('Sirviendo index.html para:', req.url);
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Función para sincronizar modelos con la base de datos
+// Función para sincronizar modelos con BD
 const syncModels = async () => {
   try {
     console.log(' Sincronizando modelos con la base de datos...');
-    // Cambiamos a sync() sin alter para evitar el error "Too many keys"
     const db = sequelize();
     if (!db) {
       throw new Error('No se pudo obtener la instancia de Sequelize');
     }
-    
-    // Deshabilitamos la sincronización automática para evitar el error "Too many keys"
-    // await db.sync({ alter: false });
     console.log(' Sincronización automática deshabilitada para evitar el error "Too many keys".');
     console.log(' Use los endpoints de migración para actualizar la estructura de la base de datos.');
     
@@ -201,12 +183,9 @@ const syncModels = async () => {
   }
 };
 
-// Función para cerrar periódicamente las conexiones no utilizadas
+// Limpieza de conexiones
 const setupConnectionCleanup = () => {
   console.log(' Configurando limpieza periódica de conexiones...');
-  
-  // Limpiar conexiones cada 30 minutos en lugar de 5 minutos
-  // para reducir la frecuencia de limpieza y evitar problemas
   setInterval(async () => {
     try {
       console.log(' Limpiando conexiones no utilizadas...');
@@ -217,16 +196,12 @@ const setupConnectionCleanup = () => {
   }, 30 * 60 * 1000); // 30 minutos
 };
 
-// Función para iniciar el servidor
+// Iniciar servidor
 const startServer = async () => {
   try {
-    // Sincronizar modelos con la base de datos
     await syncModels();
-    
-    // Configurar limpieza periódica de conexiones
     setupConnectionCleanup();
     
-    // Iniciar el servidor Express
     app.listen(PORT, () => {
       console.log(` Servidor ejecutándose en puerto ${PORT}`);
     });

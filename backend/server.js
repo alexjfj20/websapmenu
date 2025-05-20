@@ -9,6 +9,7 @@ dotenv.config();
 
 // Añadir log para verificar directorio public
 console.log('Directorio public en server.js:', path.join(__dirname, 'public'));
+console.log('Verificando existencia del archivo index.html:', require('fs').existsSync(path.join(__dirname, 'public', 'index.html')) ? 'EXISTE' : 'NO EXISTE');
 
 // Crear la aplicación Express
 const app = express();
@@ -67,18 +68,6 @@ const indexedDBRoutes = require('./routes/indexedDBRoutes');
 const whatsappRoutes = require('./routes/whatsappRoutes');
 const restauranteRoutes = require('./routes/restauranteRoutes');
 
-// Registrar las rutas API
-app.use('/api/sync', syncRoutes);
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/platos', platosRoutes);
-app.use('/api/plato', platoRoutes);
-app.use('/api/indexeddb', indexedDBRoutes);
-app.use('/api/whatsapp', whatsappRoutes);
-app.use('/api/restaurantes', restauranteRoutes);
-app.use('/api', directDeleteRoutes); // Cambié esto para que no interfiera con las rutas de frontend
-
 // Endpoint para verificar estado de API
 app.get('/api/status', (req, res) => {
   res.json({ 
@@ -115,6 +104,51 @@ app.get('/api/routes', (req, res) => {
   res.json(routes);
 });
 
+// Endpoint para verificar el contenido del directorio public
+app.get('/api/check-public', (req, res) => {
+  const fs = require('fs');
+  try {
+    const publicDir = path.join(__dirname, 'public');
+    const exists = fs.existsSync(publicDir);
+    let files = [];
+    
+    if (exists) {
+      files = fs.readdirSync(publicDir).map(file => {
+        const stats = fs.statSync(path.join(publicDir, file));
+        return {
+          name: file,
+          isDirectory: stats.isDirectory(),
+          size: stats.size,
+          mtime: stats.mtime
+        };
+      });
+    }
+    
+    res.json({
+      publicDirExists: exists,
+      publicPath: publicDir,
+      files: files
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
+// Registrar las rutas API - IMPORTANTE: registrar ANTES de servir archivos estáticos
+app.use('/api/sync', syncRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/platos', platosRoutes);
+app.use('/api/plato', platoRoutes);
+app.use('/api/indexeddb', indexedDBRoutes);
+app.use('/api/whatsapp', whatsappRoutes);
+app.use('/api/restaurantes', restauranteRoutes);
+app.use('/api', directDeleteRoutes); // Cambiado para que no interfiera con las rutas de frontend
+
 // Endpoint para verificar BD
 app.get('/api/test/db', async (req, res) => {
   try {
@@ -144,9 +178,9 @@ app.get('/api/test/db', async (req, res) => {
   }
 });
 
-// Middleware para manejar errores
-app.use((err, req, res, next) => {
-  console.error(err.stack);
+// Middleware para manejar errores de rutas API
+app.use('/api', (err, req, res, next) => {
+  console.error('Error en API:', err.stack);
   res.status(500).json({
     success: false,
     message: 'Error en servidor',
@@ -154,15 +188,22 @@ app.use((err, req, res, next) => {
   });
 });
 
-// IMPORTANTE: Servir archivos estáticos ANTES del fallback
 // Servir archivos estáticos desde la carpeta public
 app.use(express.static(path.join(__dirname, 'public')));
 
-// IMPORTANTE: Esta ruta debe ir DESPUÉS de todas las rutas API
 // Ruta fallback para SPA (Vue.js)
-app.get(/^(?!\/api).*/, (req, res) => {
+app.get('*', (req, res) => {
   console.log('Sirviendo index.html para:', req.url);
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Middleware global para manejar errores
+app.use((err, req, res, next) => {
+  console.error('Error general:', err.stack);
+  if (res.headersSent) {
+    return next(err);
+  }
+  res.status(500).send('Error interno del servidor');
 });
 
 // Función para sincronizar modelos con BD
@@ -213,3 +254,4 @@ const startServer = async () => {
 
 // Iniciar el servidor
 startServer();
+

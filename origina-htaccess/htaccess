@@ -1,0 +1,7 @@
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN
+PassengerAppRoot "/home/xpprgktm/websapmenu/backend"
+PassengerBaseURI "/websapmenu"
+PassengerNodejs "/home/xpprgktm/nodevenv/websapmenu/backend/10/bin/node"
+PassengerAppType node
+PassengerStartupFile server.js
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END

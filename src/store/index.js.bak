@@ -1,0 +1,23 @@
+// Store simplificado sin Vuex
+const store = {
+  state: {
+    // Aquí van tus estados existentes
+    currentPublicMenuId: null // Almacena el ID del menú público
+  },
+  
+  mutations: {
+    // Métodos para modificar el estado
+    setCurrentPublicMenuId(id) {
+      this.state.currentPublicMenuId = id;
+    }
+  },
+  
+  getters: {
+    // Métodos para obtener el estado
+    getCurrentPublicMenuId() {
+      return this.state.currentPublicMenuId;
+    }
+  }
+};
+
+export default store

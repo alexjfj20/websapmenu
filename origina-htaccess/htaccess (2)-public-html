@@ -1,0 +1,40 @@
+# BEGIN WordPress
+# Las directivas (líneas) entre `BEGIN WordPress` y `END WordPress` se generan dinámicamente
+# y solo se deberían modificar mediante filtros de WordPress.
+# Cualquier cambio en las directivas entre estos marcadores se sobreescribirá.
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+RewriteBase /
+RewriteRule ^index\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.php [L]
+</IfModule>
+# END WordPress
+
+# --- Reglas para la aplicación Node.js/Vue en /websapmenu/ ---
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Forzar HTTPS (Opcional pero recomendado)
+  # RewriteCond %{HTTPS} off
+  # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+  # No aplicar reglas de WP si la solicitud es para /websapmenu/
+  RewriteCond %{REQUEST_URI} ^/websapmenu/ [NC]
+  RewriteRule ^ - [L]
+
+  # Redirigir /menu/xxxxx a /websapmenu/menu/xxxxx para que Vue Router lo maneje
+  RewriteCond %{REQUEST_URI} ^/menu/ [NC]
+  RewriteRule ^menu/(.*)$ /websapmenu/menu/$1 [R=301,L]
+
+</IfModule>
+
+# Opcional: Mejorar cabeceras de seguridad (Colocar fuera de <IfModule mod_rewrite.c>)
+<IfModule mod_headers.c>
+  Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self';"
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>

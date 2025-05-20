@@ -1,0 +1,22 @@
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN
+PassengerAppRoot "/home/xpprgktm/websapmenu"
+PassengerBaseURI "/websapmenu"
+PassengerNodejs "/home/xpprgktm/nodevenv/websapmenu/10/bin/node"
+PassengerAppType node
+PassengerStartupFile server.js
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
+
+# DO NOT REMOVE OR MODIFY. CLOUDLINUX ENV VARS CONFIGURATION BEGIN
+<IfModule Litespeed>
+</IfModule>
+# DO NOT REMOVE OR MODIFY. CLOUDLINUX ENV VARS CONFIGURATION END
+
+# === Vue.js SPA rewrite rules to prevent 404 and serve index.html ===
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /websapmenu/
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /websapmenu/index.html [L]
+</IfModule>

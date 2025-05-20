@@ -1,0 +1,14 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  # Establece la base para las reglas de reescritura si es necesario (a menudo no lo es si está en el subdirectorio correcto)
+  # RewriteBase /websapmenu/
+
+  # No reescribir si es un archivo existente
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  # No reescribir si es un directorio existente
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Reescribir todas las demás solicitudes a index.html para que Vue Router las maneje
+  RewriteRule ^ index.html [L]
+</IfModule>

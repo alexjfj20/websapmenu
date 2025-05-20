@@ -1,0 +1,186 @@
+
+corregido:
+
+corregi los archivos de  htaccess
+
+********************************************
+
+este codigo esta en:https://allseo.xyz/websapmenu/
+**************************
+# --- Configuración de CloudLinux Passenger ---
+PassengerAppRoot "/home/xpprgktm/websapmenu/backend"
+PassengerBaseURI "/websapmenu"
+PassengerNodejs "/home/xpprgktm/nodevenv/websapmenu/backend/10/bin/node"
+PassengerAppType node
+PassengerStartupFile server.js
+
+# --- Reglas de reescritura para Vue SPA ---
+RewriteEngine On
+
+# Añadir slash final si falta
+RewriteCond %{REQUEST_URI} ^/websapmenu$
+RewriteRule ^websapmenu$ /websapmenu/ [R=301,L]
+
+# Redirigir cualquier ruta desconocida a index.html, excepto si es una solicitud al backend
+<IfModule mod_rewrite.c>
+  RewriteBase /websapmenu/
+
+  # No tocar archivos reales (JS, CSS, imágenes)
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  # Evitar redirección si es una API o recurso del backend
+  RewriteCond %{REQUEST_URI} !^/websapmenu/api [NC]
+  RewriteRule . /websapmenu/index.html [L]
+</IfModule>
+
+
+
+
+
+
+
+
+
+
+
+***********************************************************
+este coidog es corregido para websapmenu del:public_html
+*********************************
+
+RewriteOptions inherit
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Evitar sobreescribir si ya estamos en /websapmenu/
+  RewriteCond %{REQUEST_URI} ^/websapmenu/
+  RewriteRule ^ - [L]
+
+  # Redirige /menu/xxxxx a la app Vue
+  RewriteCond %{REQUEST_URI} ^/menu/
+  RewriteRule ^menu/(.*)$ /websapmenu/index.html [L]
+
+  # Redirige /restaurante/... (opcional, puedes eliminar si no lo usas)
+  RewriteCond %{REQUEST_URI} ^/restaurante/
+  RewriteRule ^restaurante/(.*)$ /websap/restaurante/$1 [R=301,L]
+
+  # Reglas de WordPress
+  RewriteRule ^index\.php$ - [L]
+
+  # Evitar conflicto con Vue
+  RewriteCond %{REQUEST_URI} ^/websapmenu/ - [OR]
+
+  # Regla general para WordPress
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.php [L]
+</IfModule>
+
+
+
+
+
+
+
+
+
+
+
+
+
+********************************************************************************
+este codigo de bajo no esta corregido
+********************************************************
+
+
+
+este codigo esta en:https://allseo.xyz/websapmenu/
+**************************
+
+
+RewriteEngine On
+
+# --- Redirige /websapmenu a /websapmenu/ con slash final ---
+RewriteCond %{REQUEST_URI} ^/websapmenu$
+RewriteRule ^websapmenu$ /websapmenu/ [R=301,L]
+
+# --- Redirige /menu/xxxxx a la app Vue para rutas públicas ---
+RewriteCond %{REQUEST_URI} ^/menu/
+RewriteRule ^menu/.*$ /websapmenu/index.html [L]
+
+# --- Configuración de Vue como SPA (Single Page Application) ---
+<IfModule mod_rewrite.c>
+  RewriteBase /websapmenu/
+  
+  # No reescribir si se accede directamente a index.html
+  RewriteRule ^index\.html$ - [L]
+
+  # Si no es archivo o carpeta real, enviar a index.html
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /websapmenu/index.html [L]
+</IfModule>
+
+
+
+
+***********************************************************************************
+este coidog es corregido para websapmenu del:public_html
+
+***********************************************************
+RewriteOptions inherit
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # âœ… No aplicar reglas si ya estamos dentro de /websap/
+  RewriteCond %{REQUEST_URI} ^/websap/
+  RewriteRule ^ - [L]
+
+  # âœ… Redirige accesos a /menu/... hacia la app en /websap/
+  RewriteCond %{REQUEST_URI} ^/menu/
+  RewriteRule ^menu/(.*)$ /websapmenu/index.html [L]
+
+  # âœ… Redirige accesos a /restaurante/... hacia la app en /websap/
+  RewriteCond %{REQUEST_URI} ^/restaurante/
+  RewriteRule ^restaurante/(.*)$ /websap/restaurante/$1 [R=301,L]
+
+  # ðŸ”„ WordPress rules (se mantienen activas para todo lo demÃ¡s)
+  RewriteRule ^index\.php$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.php [L]
+</IfModule>
+
+
+
+
+*********************************************************************************
+este coidog es del:public_html
+***************
+RewriteOptions inherit
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # âœ… No aplicar reglas si ya estamos dentro de /websap/
+  RewriteCond %{REQUEST_URI} ^/websap/
+  RewriteRule ^ - [L]
+
+  # âœ… Redirige accesos a /menu/... hacia la app en /websap/
+  RewriteCond %{REQUEST_URI} ^/menu/
+  RewriteRule ^menu/(.*)$ /websap/menu/$1 [R=301,L]
+
+  # âœ… Redirige accesos a /restaurante/... hacia la app en /websap/
+  RewriteCond %{REQUEST_URI} ^/restaurante/
+  RewriteRule ^restaurante/(.*)$ /websap/restaurante/$1 [R=301,L]
+
+  # ðŸ”„ WordPress rules (se mantienen activas para todo lo demÃ¡s)
+  RewriteRule ^index\.php$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.php [L]
+</IfModule>

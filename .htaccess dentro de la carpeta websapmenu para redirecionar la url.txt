@@ -1,0 +1,63 @@
+
+
+.htaccess completo para Vue en /websapmenu/ y URLs públicas /menu/xxxx
+
+******************************************************
+
+RewriteEngine On
+
+# --- Redirige /websapmenu a /websapmenu/ con slash final ---
+RewriteCond %{REQUEST_URI} ^/websapmenu$
+RewriteRule ^websapmenu$ /websapmenu/ [R=301,L]
+
+# --- Redirige /menu/xxxxx a la app Vue para rutas públicas ---
+RewriteCond %{REQUEST_URI} ^/menu/
+RewriteRule ^menu/.*$ /websapmenu/index.html [L]
+
+# --- Configuración de Vue como SPA (Single Page Application) ---
+<IfModule mod_rewrite.c>
+  RewriteBase /websapmenu/
+  
+  # No reescribir si se accede directamente a index.html
+  RewriteRule ^index\.html$ - [L]
+
+  # Si no es archivo o carpeta real, enviar a index.html
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /websapmenu/index.html [L]
+</IfModule>
+
+
+
+
+
+
+
+
+
+
+
+
+
+**************************************************
+
+RewriteEngine On
+
+# Redirige /websapmenu a /websapmenu/
+RewriteCond %{REQUEST_URI} ^/websapmenu$
+RewriteRule ^websapmenu$ /websapmenu/ [R=301,L]
+
+# Configuración para SPA Vue.js
+<IfModule mod_rewrite.c>
+  RewriteBase /websapmenu/
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /websapmenu/index.html [L]
+</IfModule>
+
+
+
+***********************************
+
+

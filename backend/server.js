@@ -80,13 +80,18 @@ const restauranteRoutes = require('./routes/restauranteRoutes'); // Rutas para r
 app.use('/api/sync', syncRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/admin', adminRoutes); // Rutas de administración
-app.use('/api/platos', platosRoutes); // Rutas de platos
-app.use('/api/plato', platoRoutes); // Rutas de plato individual
-app.use('/api/indexeddb', indexedDBRoutes); // Rutas para IndexedDB
-app.use('/api/whatsapp', whatsappRoutes); // Rutas para WhatsApp
-app.use('/api/restaurantes', restauranteRoutes); // Rutas para restaurantes
+app.use('/api/admin', adminRoutes); // IMPORTANTE: Rutas de administración correctamente montadas en /api/admin
+app.use('/api/platos', platosRoutes);
+app.use('/api/plato', platoRoutes);
+app.use('/api/indexeddb', indexedDBRoutes);
+app.use('/api/whatsapp', whatsappRoutes);
+app.use('/api/restaurantes', restauranteRoutes);
 app.use('/', directDeleteRoutes);
+
+// Ruta principal que devuelve JSON válido en lugar de texto plano
+app.get('/', (req, res) => {
+  res.json({ message: 'It works!' }); // IMPORTANTE: Devolver JSON válido, no texto
+});
 
 // Ruta de prueba simple
 app.get('/api/ping', (req, res) => {
@@ -99,6 +104,28 @@ app.get('/api/test/ping', (req, res) => {
     message: 'pong',
     timestamp: new Date().toISOString() 
   });
+});
+
+// Añadido: Endpoint para listar todas las rutas registradas (ayuda a depurar)
+app.get('/api/routes', (req, res) => {
+  const routes = [];
+  app._router.stack.forEach(middleware => {
+    if(middleware.route) { // rutas directas
+      routes.push(middleware.route.path);
+    } else if(middleware.name === 'router') { // rutas de router
+      middleware.handle.stack.forEach(handler => {
+        const route = handler.route;
+        if (route) {
+          const basePath = middleware.regexp.toString()
+            .replace('\\^', '')
+            .replace('\\/?(?=\\/|$)', '')
+            .replace(/\\\//g, '/');
+          routes.push(basePath.replace(/\\/g, '') + route.path);
+        }
+      });
+    }
+  });
+  res.json(routes);
 });
 
 // Endpoint para verificar BD

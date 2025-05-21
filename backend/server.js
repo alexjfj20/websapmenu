@@ -2,53 +2,38 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const dotenv = require('dotenv');
+const { sequelize, closeConnection } = require('./config/database');
 
 // Cargar variables de entorno
 dotenv.config();
-// Usa el puerto de la variable de entorno o 3000 por defecto
+
+// Añadir log para verificar directorio dist
+console.log('Directorio dist en server.js:', path.join(__dirname, '..', 'dist'));
+console.log('Verificando existencia del archivo index.html:', require('fs').existsSync(path.join(__dirname, '..', 'dist', 'index.html')) ? 'EXISTE' : 'NO EXISTE');
+
+// Crear la aplicación Express
+const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Importar la aplicación Express configurada en app.js
-const app = require('./app');
-
-// Configuración CORS adecuada para producción y desarrollo
-// Usa la variable de entorno CORS_ORIGIN para producción
-const allowedOrigins = process.env.NODE_ENV === 'production' 
-                         ? [process.env.CORS_ORIGIN] 
-                         : ['http://localhost:8080', 'http://localhost:8081', 'http://localhost:3001']; // Añade puertos de desarrollo si son diferentes
-
+// Configuración CORS adecuada
 app.use(cors({
-  origin: function (origin, callback) {
-    // Permite solicitudes sin origen (como Postman en algunos casos) o si el origen está en la lista
-    // En producción estricta, podrías querer quitar `!origin`
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.warn(`CORS blocked for origin: ${origin}`); // Loguear origen bloqueado
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
-  credentials: true // Es importante si usas cookies o sesiones para autenticación
+  credentials: true
 }));
 
-// Middleware adicional para CORS (puede ser redundante con la configuración anterior, pero asegura cabeceras)
+// Middleware adicional para CORS
 app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
-  }
-  // Estas cabeceras son importantes para preflight (OPTIONS)
+  res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   res.header('Access-Control-Allow-Credentials', 'true');
-
-  // Manejar solicitudes OPTIONS (preflight)
+  
   if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
+    return res.status(200).end();
   }
-
+  
   next();
 });
 
@@ -56,66 +41,40 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Servir archivos estáticos del frontend desde ../dist
-const frontendDistPath = path.join(__dirname, '..', 'dist');
-app.use(express.static(frontendDistPath));
-
-// Servir archivos estáticos desde la carpeta public (si aún es necesario)
-app.use(express.static(path.join(__dirname, 'public')));
-
 // Middleware para debug de solicitudes
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.url}`);
   next();
 });
 
-// Middleware para cerrar conexiones después de cada solicitud
+// Middleware para cerrar conexiones
 app.use((req, res, next) => {
-  // Guardar la función original end
   const originalEnd = res.end;
-  
-  // Sobrescribir la función end
   res.end = function(...args) {
-    // No cerrar conexiones después de cada solicitud, ya que esto causa problemas
-    // con el pool de conexiones. En su lugar, la limpieza se hará periódicamente.
-    
-    // Llamar a la función original end
     return originalEnd.apply(this, args);
   };
-  
   next();
 });
 
-// Rutas de la API
+// Importar rutas
+const syncRoutes = require('./routes/syncRoutes');
 const authRoutes = require('./routes/authRoutes');
+const directDeleteRoutes = require('./routes/directDeleteRoutes');
 const userRoutes = require('./routes/userRoutes');
-const platoRoutes = require('./routes/platoRoutes'); // Asegúrate que el nombre del archivo sea correcto
+const adminRoutes = require('./routes/adminRoutes');
+const platosRoutes = require('./routes/platosRoutes');
+const platoRoutes = require('./routes/platoRoutes');
+const indexedDBRoutes = require('./routes/indexedDBRoutes');
+const whatsappRoutes = require('./routes/whatsappRoutes');
 const restauranteRoutes = require('./routes/restauranteRoutes');
-const backupRoutes = require('./routes/backupRoutes');
-const notificationRoutes = require('./routes/notificationRoutes');
-// ... (importa todas tus otras rutas de API aquí)
 
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/platos', platoRoutes);
-app.use('/api/restaurantes', restauranteRoutes);
-app.use('/api/backup', backupRoutes);
-app.use('/api/notifications', notificationRoutes);
-// ... (usa todas tus otras rutas de API aquí)
-
-// Catch-all para servir index.html para rutas de SPA (Single Page Application)
-app.get('*', (req, res) => {
-  // Asegúrate que las solicitudes a la API no sean interceptadas por esto
-  if (!req.path.startsWith('/api/')) {
-    res.sendFile(path.join(frontendDistPath, 'index.html'), (err) => {
-      if (err) {
-        res.status(500).send(err);
-      }
-    });
-  } else {
-    // Si es una ruta API no encontrada, podría devolver 404
-    res.status(404).send('API route not found');
-  }
+// Endpoint para verificar estado de API
+app.get('/api/status', (req, res) => {
+  res.json({ 
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
 });
 
 // Ruta de prueba simple
@@ -123,63 +82,149 @@ app.get('/api/ping', (req, res) => {
   res.status(200).json({ message: 'pong', timestamp: new Date().toISOString() });
 });
 
-// Ruta de prueba para test
-app.get('/api/test/ping', (req, res) => {
+// Healthcheck API general
+app.get('/api/healthcheck', (req, res) => {
+  console.log('Verificando estado general de la API');
   res.status(200).json({ 
-    message: 'pong',
-    timestamp: new Date().toISOString() 
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    message: 'API funcionando correctamente',
+    version: '1.0.0'
   });
 });
 
-// Verificar el estado de la base de datos
-app.get('/api/test/db', async (req, res) => {
+// Endpoint para listar rutas
+app.get('/api/routes', (req, res) => {
+  const routes = [];
+  app._router.stack.forEach(middleware => {
+    if(middleware.route) {
+      routes.push(middleware.route.path);
+    } else if(middleware.name === 'router') {
+      middleware.handle.stack.forEach(handler => {
+        const route = handler.route;
+        if (route) {
+          const basePath = middleware.regexp.toString()
+            .replace('\\^', '')
+            .replace('\\/?(?=\\/|$)', '')
+            .replace(/\\\//g, '/');
+          routes.push(basePath.replace(/\\/g, '') + route.path);
+        }
+      });
+    }
+  });
+  res.json(routes);
+});
+
+// Endpoint para verificar el contenido del directorio dist
+app.get('/api/check-dist', (req, res) => {
+  const fs = require('fs');
   try {
-    const { getConnection } = require('./config/dbPool');
-    const connection = await getConnection();
+    const distDir = path.join(__dirname, '..', 'dist');
+    const exists = fs.existsSync(distDir);
+    let files = [];
     
-    // Ejecutar una consulta simple para verificar la conexión
-    const [result] = await connection.query('SELECT 1 + 1 AS result');
+    if (exists) {
+      files = fs.readdirSync(distDir).map(file => {
+        const stats = fs.statSync(path.join(distDir, file));
+        return {
+          name: file,
+          isDirectory: stats.isDirectory(),
+          size: stats.size,
+          mtime: stats.mtime
+        };
+      });
+    }
     
     res.json({
-      status: 'ok',
+      distDirExists: exists,
+      distPath: distDir,
+      files: files
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
+// Registrar las rutas API - IMPORTANTE: registrar ANTES de servir archivos estáticos
+app.use('/api/sync', syncRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/platos', platosRoutes);
+app.use('/api/plato', platoRoutes);
+app.use('/api/indexeddb', indexedDBRoutes);
+app.use('/api/whatsapp', whatsappRoutes);
+app.use('/api/restaurantes', restauranteRoutes);
+app.use('/api', directDeleteRoutes); // Cambiado para que no interfiera con las rutas de frontend
+
+// Endpoint para verificar BD
+app.get('/api/test/db', async (req, res) => {
+  try {
+    await sequelize.authenticate();
+    const [tables] = await sequelize.query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = '${process.env.DB_NAME || 'websap'}'
+    `);
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Conexión a base de datos exitosa',
       data: {
-        database: process.env.DB_NAME || 'websap',
         connected: true,
-        result: result[0].result,
-        tables: ['platos', 'categorias', 'usuarios', 'ventas']
+        database: process.env.DB_NAME || 'websap',
+        tables: tables.map(t => t.table_name || t.TABLE_NAME)
       }
     });
   } catch (error) {
-    console.error('Error al verificar la base de datos:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'Error al conectar con la base de datos',
+    console.error('Error al verificar BD:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al conectar con base de datos',
       error: error.message
     });
   }
 });
 
-// Middleware de manejo de errores (debe ir al final)
-app.use((err, req, res) => { // Remove unused 'next' parameter
-  console.error('Error no manejado:', err);
-  // Evitar enviar detalles del error en producción por seguridad
-  const statusCode = err.status || 500;
-  const message = process.env.NODE_ENV === 'production' ? 'Internal Server Error' : err.message;
-  res.status(statusCode).json({ error: message });
+// Middleware para manejar errores de rutas API
+app.use('/api', (err, req, res, next) => {
+  console.error('Error en API:', err.stack);
+  res.status(500).json({
+    success: false,
+    message: 'Error en servidor',
+    error: err.message
+  });
 });
 
-// Función para sincronizar modelos con la base de datos
+// Servir archivos estáticos desde la carpeta dist
+app.use(express.static(path.join(__dirname, '..', 'dist')));
+
+// Ruta fallback para SPA (Vue.js)
+app.get('*', (req, res) => {
+  console.log('Sirviendo index.html para:', req.url);
+  res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
+});
+
+// Middleware global para manejar errores
+app.use((err, req, res, next) => {
+  console.error('Error general:', err.stack);
+  if (res.headersSent) {
+    return next(err);
+  }
+  res.status(500).send('Error interno del servidor');
+});
+
+// Función para sincronizar modelos con BD
 const syncModels = async () => {
   try {
     console.log(' Sincronizando modelos con la base de datos...');
-    // Cambiamos a sync() sin alter para evitar el error "Too many keys"
     const db = sequelize();
     if (!db) {
       throw new Error('No se pudo obtener la instancia de Sequelize');
     }
-    
-    // Deshabilitamos la sincronización automática para evitar el error "Too many keys"
-    // await db.sync({ alter: false });
     console.log(' Sincronización automática deshabilitada para evitar el error "Too many keys".');
     console.log(' Use los endpoints de migración para actualizar la estructura de la base de datos.');
     
@@ -190,12 +235,9 @@ const syncModels = async () => {
   }
 };
 
-// Función para cerrar periódicamente las conexiones no utilizadas
+// Limpieza de conexiones
 const setupConnectionCleanup = () => {
   console.log(' Configurando limpieza periódica de conexiones...');
-  
-  // Limpiar conexiones cada 30 minutos en lugar de 5 minutos
-  // para reducir la frecuencia de limpieza y evitar problemas
   setInterval(async () => {
     try {
       console.log(' Limpiando conexiones no utilizadas...');
@@ -206,16 +248,12 @@ const setupConnectionCleanup = () => {
   }, 30 * 60 * 1000); // 30 minutos
 };
 
-// Función para iniciar el servidor
+// Iniciar servidor
 const startServer = async () => {
   try {
-    // Sincronizar modelos con la base de datos
     await syncModels();
-    
-    // Configurar limpieza periódica de conexiones
     setupConnectionCleanup();
     
-    // Iniciar el servidor Express
     app.listen(PORT, () => {
       console.log(` Servidor ejecutándose en puerto ${PORT}`);
     });

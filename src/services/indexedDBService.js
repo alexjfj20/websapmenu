@@ -1,7 +1,7 @@
 // Servicio para manejar operaciones con IndexedDB
 const DB_NAME = 'restauranteAppDB'; // Usar este nombre para todas las operaciones
 const DB_VERSION = 4; // Incrementar la versión para forzar una actualización del esquema
-const API_BASE_URL = process.env.VUE_APP_API_URL || 'http://localhost:3000'; // URL base para la API
+const API_BASE_URL = process.env.VUE_APP_API_URL || 'https://websapmenu.onrender.com'; // URL base para la API
 const PLATOS_STORE = 'platos'; // Usar 'platos' en lugar de 'menuItems'
 const SYNC_QUEUE_STORE = 'syncQueue';
 
@@ -312,7 +312,7 @@ const deletePlato = async (id) => {
         console.log(`Enviando solicitud al servidor para eliminar plato ID: ${id}`);
         
         // Usamos una URL absoluta para asegurarnos de que la solicitud llegue al servidor correcto
-        const serverUrl = 'http://localhost:3000/api/sync/platos';
+        const serverUrl = 'https://websapmenu.onrender.com/api/sync/platos';
         console.log(`URL completa para sincronización: ${serverUrl}`);
         
         // Enviar una solicitud POST con operation=delete en lugar de DELETE

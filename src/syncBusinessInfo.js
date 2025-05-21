@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 // URL base de la API
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'https://websapmenu.onrender.com/api';
 
 // Función para obtener el token de autenticación
 async function getAuthToken() {

@@ -17,7 +17,7 @@ import { optimizeImageForSync } from './imageService';
 // const RAW_URL = 'http://localhost:3000/raw';
 // --- Añadido ---
 // Usar variables de entorno para la URL base de la API
-const API_BASE_URL = process.env.VUE_APP_API_BASE_URL || 'http://localhost:3000'; 
+const API_BASE_URL = process.env.VUE_APP_API_BASE_URL || 'https://websapmenu.onrender.com'; 
 const API_URL = `${API_BASE_URL}/api`;
 const RAW_URL = `${API_BASE_URL}/raw`;
 
@@ -147,7 +147,7 @@ const checkAlternativePort = async () => {
   for (const port of ports) {
     try {
       console.log(`Probando en puerto: ${port}`);
-      const response = await fetch(`http://localhost:${port}/raw/ping`, {
+      const response = await fetch(`https://websapmenu.onrender.com/raw/ping`, {
         method: 'GET',
         mode: 'no-cors',
         cache: 'no-store',

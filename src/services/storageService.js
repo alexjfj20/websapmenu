@@ -607,7 +607,7 @@ export async function updateItemAvailability(itemId, newQuantity) {
           
           // Intentar sincronizar con el backend (opcional, no bloquea)
           try {
-            fetch('http://localhost:3000/actualizar-disponibilidad', {
+            fetch('https://websapmenu.onrender.com/actualizar-disponibilidad', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',

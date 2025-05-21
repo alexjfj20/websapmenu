@@ -4,7 +4,7 @@
 
 // URL base de la API
 const API_URL = process.env.NODE_ENV === 'development' 
-  ? 'http://localhost:3000/api' 
+  ? 'https://websapmenu.onrender.com/api' 
   : '/api';
 
 // Token de autenticación

@@ -6,7 +6,7 @@ import { adaptPlatoData } from '../utils/dataAdapters';
 import { getCurrentUserRestaurant } from './restauranteService';
 
 // API URL ahora con puerto correcto
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'https://websapmenu.onrender.com/api';
 
 // Crear un nuevo plato
 const createPlato = async (platoData) => {

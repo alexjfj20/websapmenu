@@ -3,13 +3,38 @@ const cors = require('cors');
 const path = require('path');
 const dotenv = require('dotenv');
 const { sequelize, closeConnection } = require('./config/database');
+const fs = require('fs');
 
 // Cargar variables de entorno
 dotenv.config();
 
-// Añadir log para verificar directorio dist
-console.log('Directorio dist en server.js:', path.join(__dirname, '..', 'dist'));
-console.log('Verificando existencia del archivo index.html:', require('fs').existsSync(path.join(__dirname, '..', 'dist', 'index.html')) ? 'EXISTE' : 'NO EXISTE');
+// Verificar posibles ubicaciones de archivos estáticos
+console.log('=== VERIFICANDO UBICACIONES DE ARCHIVOS ESTÁTICOS ===');
+const possibleStaticPaths = [
+  { path: path.join(__dirname, '..', 'dist'), name: 'Carpeta dist en raíz del proyecto' },
+  { path: path.join(__dirname, '..'), name: 'Directorio raíz del proyecto' },
+  { path: path.join(__dirname, '..', '..', 'websapmenu'), name: 'Carpeta websapmenu en hosting' },
+  { path: path.join(__dirname, 'public'), name: 'Carpeta public en backend' }
+];
+
+// Verificar cada ubicación
+let staticDir = null;
+for (const location of possibleStaticPaths) {
+  const exists = fs.existsSync(location.path);
+  const hasIndexHtml = exists && fs.existsSync(path.join(location.path, 'index.html'));
+  console.log(`${location.name} (${location.path}): ${exists ? 'EXISTE' : 'NO EXISTE'} ${hasIndexHtml ? '- TIENE index.html' : ''}`);
+  
+  if (hasIndexHtml && !staticDir) {
+    staticDir = location.path;
+    console.log(`✅ Usando ${location.name} para archivos estáticos`);
+  }
+}
+
+// Si no se encontró ninguna ubicación válida, usar ubicación por defecto
+if (!staticDir) {
+  staticDir = path.join(__dirname, '..', 'dist');
+  console.log(`⚠️ No se encontró ninguna carpeta con index.html, usando ubicación por defecto: ${staticDir}`);
+}
 
 // Crear la aplicación Express
 const app = express();
@@ -89,7 +114,8 @@ app.get('/api/healthcheck', (req, res) => {
     status: 'ok',
     timestamp: new Date().toISOString(),
     message: 'API funcionando correctamente',
-    version: '1.0.0'
+    version: '1.0.0',
+    staticPath: staticDir
   });
 });
 
@@ -115,30 +141,45 @@ app.get('/api/routes', (req, res) => {
   res.json(routes);
 });
 
-// Endpoint para verificar el contenido del directorio dist
-app.get('/api/check-dist', (req, res) => {
-  const fs = require('fs');
+// Endpoint para verificar el contenido de los directorios estáticos
+app.get('/api/check-static', (req, res) => {
   try {
-    const distDir = path.join(__dirname, '..', 'dist');
-    const exists = fs.existsSync(distDir);
-    let files = [];
+    const results = {};
     
-    if (exists) {
-      files = fs.readdirSync(distDir).map(file => {
-        const stats = fs.statSync(path.join(distDir, file));
-        return {
-          name: file,
-          isDirectory: stats.isDirectory(),
-          size: stats.size,
-          mtime: stats.mtime
-        };
-      });
+    for (const location of possibleStaticPaths) {
+      const exists = fs.existsSync(location.path);
+      let files = [];
+      
+      if (exists) {
+        files = fs.readdirSync(location.path).map(file => {
+          try {
+            const stats = fs.statSync(path.join(location.path, file));
+            return {
+              name: file,
+              isDirectory: stats.isDirectory(),
+              size: stats.size,
+              mtime: stats.mtime
+            };
+          } catch (err) {
+            return {
+              name: file,
+              error: err.message
+            };
+          }
+        });
+      }
+      
+      results[location.name] = {
+        path: location.path,
+        exists: exists,
+        files: files,
+        isCurrentlyUsed: location.path === staticDir
+      };
     }
     
     res.json({
-      distDirExists: exists,
-      distPath: distDir,
-      files: files
+      staticDirInUse: staticDir,
+      locations: results
     });
   } catch (error) {
     res.status(500).json({
@@ -199,13 +240,34 @@ app.use('/api', (err, req, res, next) => {
   });
 });
 
-// Servir archivos estáticos desde la carpeta dist
-app.use(express.static(path.join(__dirname, '..', 'dist')));
+// Servir archivos estáticos desde la carpeta determinada
+app.use(express.static(staticDir));
 
 // Ruta fallback para SPA (Vue.js)
 app.get('*', (req, res) => {
   console.log('Sirviendo index.html para:', req.url);
-  res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
+  
+  // Verificar si el archivo index.html existe
+  const indexPath = path.join(staticDir, 'index.html');
+  
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    console.error(`Error: No se encontró el archivo index.html en ${staticDir}`);
+    res.status(500).send(`
+      <html>
+        <head><title>Error</title></head>
+        <body>
+          <h1>Error al cargar la aplicación</h1>
+          <p>No se encontró el archivo index.html en la ubicación esperada.</p>
+          <p>Por favor contacte al administrador.</p>
+          <hr>
+          <p>Ruta buscada: ${indexPath}</p>
+          <p>Tiempo: ${new Date().toISOString()}</p>
+        </body>
+      </html>
+    `);
+  }
 });
 
 // Middleware global para manejar errores
@@ -255,7 +317,11 @@ const startServer = async () => {
     setupConnectionCleanup();
     
     app.listen(PORT, () => {
+      console.log(`====================================================`);
       console.log(` Servidor ejecutándose en puerto ${PORT}`);
+      console.log(` Archivos estáticos servidos desde: ${staticDir}`);
+      console.log(` Modo: ${process.env.NODE_ENV || 'desarrollo'}`);
+      console.log(`====================================================`);
     });
   } catch (error) {
     console.error('Error crítico al iniciar el servidor:', error);
@@ -265,4 +331,3 @@ const startServer = async () => {
 
 // Iniciar el servidor
 startServer();
-
